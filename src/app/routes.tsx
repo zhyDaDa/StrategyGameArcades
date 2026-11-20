@@ -15,6 +15,14 @@ export const ROUTES: readonly RouteDefinition[] = [
     },
   },
   {
+    id: 'gameConfig',
+    pattern: ROUTE_PATHS.gameConfig,
+    load: async () => {
+      const { GameConfigPage } = await import('./pages/GameConfigPage')
+      return { Page: GameConfigPage }
+    },
+  },
+  {
     id: 'game',
     pattern: ROUTE_PATHS.game,
     load: async () => {

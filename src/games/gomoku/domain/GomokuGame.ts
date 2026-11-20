@@ -17,7 +17,7 @@ export class GomokuGame extends BaseGame<GomokuState, GomokuAction, GomokuObserv
   constructor() {
     super({
       id: 'gomoku',
-      rulesVersion: 1,
+      rulesVersion: 2,
       stateSchema: gomokuStateSchema,
       actionSchema: gomokuActionSchema,
     })

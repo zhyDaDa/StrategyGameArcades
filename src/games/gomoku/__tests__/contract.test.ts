@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { GomokuGame } from '../domain/GomokuGame'
 import { gomokuStateSchema } from '../domain/schema'
-import { selectResult } from '../domain/selectors'
+import { selectEndReason, selectResult, selectWinningLine } from '../domain/selectors'
 
 describe('五子棋契约', () => {
   const game = new GomokuGame()
@@ -46,11 +46,31 @@ describe('五子棋契约', () => {
     expect('winner' in observation).toBe(false)
   })
 
-  it('Selector 派生结果与规则一致', () => {
+  it('Selector 派生结果与规则一致，终局原因可恢复', () => {
     let state = game.createInitialState()
     state = game.reduce(state, 'black', { type: 'place', row: 7, col: 7 }).state
     state = game.reduce(state, 'white', { type: 'place', row: 0, col: 0 }).state
     expect(selectResult(state)).toBeNull()
     expect(gomokuStateSchema.parse(state).cells.filter((c) => c !== 'empty')).toHaveLength(2)
+
+    let won = game.createInitialState()
+    won = game.reduce(won, 'black', { type: 'place', row: 7, col: 7 }).state
+    won = game.reduce(won, 'white', { type: 'place', row: 0, col: 0 }).state
+    won = game.reduce(won, 'black', { type: 'place', row: 7, col: 8 }).state
+    won = game.reduce(won, 'white', { type: 'place', row: 0, col: 1 }).state
+    won = game.reduce(won, 'black', { type: 'place', row: 7, col: 9 }).state
+    won = game.reduce(won, 'white', { type: 'place', row: 0, col: 2 }).state
+    won = game.reduce(won, 'black', { type: 'place', row: 7, col: 10 }).state
+    won = game.reduce(won, 'white', { type: 'place', row: 0, col: 3 }).state
+    won = game.reduce(won, 'black', { type: 'place', row: 7, col: 11 }).state
+    expect(selectResult(won)).toEqual({ outcome: 'win', winner: 'black' })
+    expect(selectEndReason(won)).toBe('five')
+    expect(selectWinningLine(won)).toHaveLength(5)
+    expect(game.restore(game.serialize(won))).toEqual(won)
+  })
+
+  it('schema 拒绝非 15×15 的局面', () => {
+    const state = game.createInitialState()
+    expect(gomokuStateSchema.safeParse({ ...state, size: 14 }).success).toBe(false)
   })
 })

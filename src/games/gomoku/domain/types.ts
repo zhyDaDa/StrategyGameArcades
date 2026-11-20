@@ -19,20 +19,25 @@ export type GomokuAction =
 
 export type GomokuStatus = 'playing' | 'completed'
 
-/** 只存事实：棋盘、当前玩家、生命期状态、终局赢家、最后落子与步数。 */
+/** 终局原因：连五 / 认输 / 棋盘填满。终局后只用于展示与结算。 */
+export const GomokuEndReason = ['five', 'resign', 'board-full'] as const
+export type GomokuEndReason = (typeof GomokuEndReason)[number]
+
+/** 只存事实：棋盘、当前玩家、生命期状态、终局赢家与原因、最后落子与步数。 */
 export interface GomokuState {
   readonly size: number
   readonly cells: readonly GomokuCellValue[]
   readonly status: GomokuStatus
   readonly currentPlayer: GomokuSide | null
   readonly winner: GomokuSide | null
+  readonly endReason: GomokuEndReason | null
   readonly lastMove: GomokuCoord | null
   readonly moveCount: number
 }
 
 export type GomokuEvent =
   | { readonly type: 'piece.placed'; readonly playerId: GomokuSide; readonly row: number; readonly col: number }
-  | { readonly type: 'game.finished'; readonly result: GameResult }
+  | { readonly type: 'game.finished'; readonly result: GameResult; readonly reason: GomokuEndReason }
 
 /** 完全信息博弈：当前玩家可见的公开信息。 */
 export interface GomokuObservation {

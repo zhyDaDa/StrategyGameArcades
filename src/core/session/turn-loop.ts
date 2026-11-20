@@ -3,7 +3,7 @@ import type { GameSession } from './GameSession'
 
 /**
  * 让指定的 Controller 为当前玩家做一次决策，并通过 Session 统一提交。
- * 返回是否真正执行了一步（对局已结束或非当前玩家时返回 false）。
+ * 返回是否真正执行了一步（对局已结束、非当前玩家或悔棋协商中返回 false）。
  * 决策期间被取消（AbortSignal）则不提交、不改变状态。
  */
 export async function runControllerTurn<S, A, O, E>(
@@ -12,7 +12,7 @@ export async function runControllerTurn<S, A, O, E>(
   signal: AbortSignal,
 ): Promise<boolean> {
   const snapshot = session.getSnapshot()
-  if (snapshot.result !== null) {
+  if (snapshot.result !== null || snapshot.pendingUndo !== null) {
     return false
   }
   const playerId = snapshot.currentPlayer
@@ -35,6 +35,18 @@ export async function runControllerTurn<S, A, O, E>(
   if (signal.aborted) {
     return false
   }
+
+  // 决策是异步的：期间可能已经悔棋、换人甚至终局，提交前必须复核。
+  const after = session.getSnapshot()
+  if (
+    after.version !== snapshot.version ||
+    after.currentPlayer !== playerId ||
+    after.pendingUndo !== null ||
+    after.result !== null
+  ) {
+    return false
+  }
+
   session.dispatch(playerId, action)
   return true
 }

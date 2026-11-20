@@ -9,11 +9,16 @@ export function eventsToCues(events: readonly GomokuEvent[], transitionIndex: nu
   return events.map((event, eventIndex): AnimationCue => {
     const id = `${transitionIndex}:${eventIndex}`
     if (event.type === 'piece.placed') {
-      return { id, kind: 'piece.place', payload: { row: event.row, col: event.col } }
+      return {
+        id,
+        kind: 'piece.place',
+        payload: { row: event.row, col: event.col, playerId: event.playerId },
+      }
     }
-    if (event.type === 'game.finished') {
-      return { id, kind: 'game.finish' }
+    return {
+      id,
+      kind: 'game.finish',
+      payload: { result: event.result, reason: event.reason },
     }
-    return { id, kind: event.type }
   })
 }

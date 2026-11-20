@@ -3,16 +3,41 @@ import type { PlayerId } from '../contracts/player'
 import type { GameResult } from '../contracts/result'
 import type { ActionRecord } from '../history/action-record'
 
-export interface GameSessionSnapshot<S> {
+/** 一次 transition 的产出索引与领域事件；index 即产生它时的 version。 */
+export interface SessionTransition<E> {
+  readonly index: number
+  readonly events: readonly E[]
+}
+
+/** 悔棋协商：申请者必须是最后一步的行为者，应答者是当前玩家。 */
+export interface PendingUndo {
+  readonly requestedBy: PlayerId
+  readonly responder: PlayerId
+  readonly targetSequence: number
+}
+
+export interface GameSessionSnapshot<S, E> {
   readonly version: number
   readonly state: Readonly<S>
   readonly currentPlayer: PlayerId | null
   readonly result: GameResult | null
   readonly canUndo: boolean
   readonly canRedo: boolean
+  readonly lastActor: PlayerId | null
+  readonly pendingUndo: PendingUndo | null
+  readonly lastTransition: SessionTransition<E>
 }
 
-export type SessionErrorCode = 'game-over' | 'not-your-turn' | 'invalid-action' | 'illegal-action'
+export type SessionErrorCode =
+  | 'game-over'
+  | 'not-your-turn'
+  | 'invalid-action'
+  | 'illegal-action'
+  | 'undo-unavailable'
+  | 'undo-pending'
+  | 'undo-not-last-actor'
+  | 'undo-not-responder'
+  | 'no-pending-undo'
 
 export class SessionError extends Error {
   readonly code: SessionErrorCode
@@ -29,9 +54,15 @@ interface UndoEntry<S, A> {
   readonly record: ActionRecord<A>
 }
 
+export interface GameSessionOptions<S> {
+  /** 从存档恢复时注入的局面；缺省则创建初始局面。 */
+  readonly initialState?: S
+}
+
 /**
  * 一局游戏唯一的状态所有者与行为执行入口。
  * - `dispatch` 原子化：校验玩家 / Action 结构 / 合法性，全部通过才提交新状态。
+ * - 悔棋是元操作：复用 Action History + 快照，并经过「申请 -> 对方应答」的协商。
  * - 外部只能读取只读快照；任何 View / 动画 / LLM 都不得直接修改内部状态。
  * - 订阅发布的是不可变快照：状态未变化时快照引用保持不变。
  */
@@ -40,15 +71,17 @@ export class GameSession<S, A, O, E> {
   private state: S
   private version: number
   private nextSequence: number
-  private snapshot: GameSessionSnapshot<S>
+  private snapshot: GameSessionSnapshot<S, E>
+  private pendingUndo: PendingUndo | null = null
+  private lastTransition: SessionTransition<E> = { index: 0, events: [] }
 
   private readonly listeners = new Set<() => void>()
   private readonly undoStack: Array<UndoEntry<S, A>> = []
   private readonly redoStack: Array<UndoEntry<S, A>> = []
 
-  constructor(game: GameRuntime<S, A, O, E>) {
+  constructor(game: GameRuntime<S, A, O, E>, options: GameSessionOptions<S> = {}) {
     this.game = game
-    this.state = game.createInitialState()
+    this.state = options.initialState ?? game.createInitialState()
     this.version = 0
     this.nextSequence = 0
     this.snapshot = this.buildSnapshot()
@@ -58,7 +91,7 @@ export class GameSession<S, A, O, E> {
     return this.game
   }
 
-  getSnapshot(): Readonly<GameSessionSnapshot<S>> {
+  getSnapshot(): Readonly<GameSessionSnapshot<S, E>> {
     return this.snapshot
   }
 
@@ -81,6 +114,9 @@ export class GameSession<S, A, O, E> {
   dispatch(playerId: PlayerId, action: A): void {
     if (this.snapshot.result !== null) {
       throw new SessionError('game-over', '对局已结束，无法再行动。')
+    }
+    if (this.pendingUndo !== null) {
+      throw new SessionError('undo-pending', '悔棋申请等待应答，暂时不能落子。')
     }
     const currentPlayer = this.snapshot.currentPlayer
     if (currentPlayer === null || playerId !== currentPlayer) {
@@ -111,20 +147,70 @@ export class GameSession<S, A, O, E> {
     this.redoStack.length = 0
     this.state = transition.state
     this.version += 1
-    this.snapshot = this.buildSnapshot()
-    this.notify()
+    this.publish({ index: this.version, events: transition.events })
+  }
+
+  /**
+   * 申请撤回最后一步。只有最后一步的行为者可以申请，
+   * 应答者是当前玩家；终局后不再允许。
+   */
+  requestUndo(requester: PlayerId): PendingUndo {
+    if (this.snapshot.result !== null) {
+      throw new SessionError('undo-unavailable', '对局已结束，只能重新开局。')
+    }
+    if (this.pendingUndo !== null) {
+      throw new SessionError('undo-pending', '已经有一条悔棋申请在等待应答。')
+    }
+    const entry = this.undoStack[this.undoStack.length - 1]
+    if (entry === undefined) {
+      throw new SessionError('undo-unavailable', '还没有可以撤回的行为。')
+    }
+    if (entry.record.playerId !== requester) {
+      throw new SessionError('undo-not-last-actor', '只有刚行动过的玩家可以申请悔棋。')
+    }
+    const responder = this.snapshot.currentPlayer
+    if (responder === null || responder === requester) {
+      throw new SessionError('undo-unavailable', '当前没有可以对这份申请作答的玩家。')
+    }
+
+    const pending: PendingUndo = {
+      requestedBy: requester,
+      responder,
+      targetSequence: entry.record.sequence,
+    }
+    this.pendingUndo = pending
+    this.version += 1
+    this.publish({ index: this.version, events: [] })
+    return pending
+  }
+
+  /** 应答悔棋申请；只有 pendingUndo.responder 可以作答。 */
+  resolveUndo(responder: PlayerId, accept: boolean): boolean {
+    const pending = this.pendingUndo
+    if (pending === null) {
+      throw new SessionError('no-pending-undo', '当前没有等待应答的悔棋申请。')
+    }
+    if (pending.responder !== responder) {
+      throw new SessionError('undo-not-responder', `这条悔棋申请应由 ${pending.responder} 应答。`)
+    }
+
+    if (accept) {
+      this.applyUndo()
+    }
+    this.pendingUndo = null
+    this.version += 1
+    this.publish({ index: this.version, events: [] })
+    return accept
   }
 
   undo(): void {
-    const entry = this.undoStack.pop()
-    if (entry === undefined) {
+    if (this.undoStack.length === 0) {
       return
     }
-    this.redoStack.push({ state: this.state, record: entry.record })
-    this.state = entry.state
+    this.applyUndo()
+    this.pendingUndo = null
     this.version += 1
-    this.snapshot = this.buildSnapshot()
-    this.notify()
+    this.publish({ index: this.version, events: [] })
   }
 
   redo(): void {
@@ -134,21 +220,38 @@ export class GameSession<S, A, O, E> {
     }
     this.undoStack.push({ state: this.state, record: entry.record })
     this.state = entry.state
+    this.pendingUndo = null
     this.version += 1
-    this.snapshot = this.buildSnapshot()
-    this.notify()
+    this.publish({ index: this.version, events: [] })
   }
 
   reset(): void {
     this.state = this.game.createInitialState()
     this.version += 1
+    this.nextSequence = 0
     this.undoStack.length = 0
     this.redoStack.length = 0
+    this.pendingUndo = null
+    this.publish({ index: this.version, events: [] })
+  }
+
+  private applyUndo(): void {
+    const entry = this.undoStack.pop()
+    if (entry === undefined) {
+      return
+    }
+    this.redoStack.push({ state: this.state, record: entry.record })
+    this.state = entry.state
+  }
+
+  private publish(transition: SessionTransition<E>): void {
+    this.lastTransition = transition
     this.snapshot = this.buildSnapshot()
     this.notify()
   }
 
-  private buildSnapshot(): GameSessionSnapshot<S> {
+  private buildSnapshot(): GameSessionSnapshot<S, E> {
+    const lastEntry = this.undoStack[this.undoStack.length - 1]
     return {
       version: this.version,
       state: this.state,
@@ -156,6 +259,9 @@ export class GameSession<S, A, O, E> {
       result: this.game.getResult(this.state),
       canUndo: this.undoStack.length > 0,
       canRedo: this.redoStack.length > 0,
+      lastActor: lastEntry === undefined ? null : lastEntry.record.playerId,
+      pendingUndo: this.pendingUndo,
+      lastTransition: this.lastTransition,
     }
   }
 

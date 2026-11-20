@@ -17,7 +17,7 @@ export const pageTransitionTokens = {
   /** 整个矩阵的首尾延迟差（秒）；相邻气泡延迟连续变化。 */
   maxStagger: 0.45,
   /** loading 阶段最短停留（秒）；页面再快也让加载指示器完整出现一次。 */
-  loadingMinDuration: 1,
+  loadingMinDuration: 0.5,
 } as const
 
 /**

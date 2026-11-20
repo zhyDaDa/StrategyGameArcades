@@ -7,7 +7,7 @@ export interface GameRaw<Id extends string = string> {
   readonly id: Id
   readonly name: string
   readonly description: string
-  /** 该游戏页面的路由路径，例如 `/games/gomoku`。 */
+  /** 进入该游戏的入口路径（配置页），例如 `/config/gomoku`。 */
   readonly path: string
   /** 封面图 URL；尚未提供时为 null，由展示层渲染占位。 */
   readonly cover: string | null

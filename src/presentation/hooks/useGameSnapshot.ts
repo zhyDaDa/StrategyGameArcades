@@ -7,7 +7,7 @@ import type { GameSession, GameSessionSnapshot } from '@/core/session/GameSessio
  */
 export function useGameSnapshot<S, A, O, E>(
   session: GameSession<S, A, O, E>,
-): Readonly<GameSessionSnapshot<S>> {
+): Readonly<GameSessionSnapshot<S, E>> {
   const subscribe = useCallback(
     (onStoreChange: () => void) => session.subscribe(onStoreChange),
     [session],

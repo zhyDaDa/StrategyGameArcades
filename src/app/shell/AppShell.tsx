@@ -19,6 +19,10 @@ function resolveTitle(match: RouteMatch): string {
       const game = GAMES.find((item) => item.id === match.params.gameId)
       return game?.name ?? '未知游戏'
     }
+    case 'gameConfig': {
+      const game = GAMES.find((item) => item.id === match.params.gameId)
+      return game === undefined ? '对局配置' : `${game.name} · 配置`
+    }
     case 'settings':
       return '设置'
     case 'notFound':

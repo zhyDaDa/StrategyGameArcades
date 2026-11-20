@@ -1,11 +1,10 @@
+import { GAME_VIEWS } from '@/app/game-views/registry'
 import { GAMES } from '@/games/registry'
-import { Link } from '@/routers/Link'
-import { ROUTE_PATHS } from '@/routers/paths'
-import { useRouter } from '@/routers/useRouter'
+import { Link, ROUTE_PATHS, gameConfigPath, useRouter } from '@/routers'
 
 /**
- * 游戏详情页骨架：只负责取路由参数、选定游戏并组织页面。
- * 棋盘与对局交互属于后续阶段，这里不放任何规则逻辑。
+ * 游戏详情页骨架：只负责取路由参数、选定游戏并挂载组合根里的对局视图。
+ * 规则、Session 与 Controller 都在 app/game-views 中装配，这里不写业务逻辑。
  */
 export function GamePage() {
   const { match } = useRouter()
@@ -28,20 +27,33 @@ export function GamePage() {
     )
   }
 
+  const Match = GAME_VIEWS[game.id]?.Match
+
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-6 py-16">
-      <header className="flex flex-col gap-3 border-b pb-8">
-        <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground">
-          TABLE / 桌游实验室
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">{game.name}</h1>
-        <p className="text-sm text-muted-foreground">{game.description}</p>
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-10">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground">
+            TABLE / 桌游实验室
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">{game.name}</h1>
+          <p className="text-sm text-muted-foreground">{game.description}</p>
+        </div>
+        <Link
+          to={gameConfigPath(game.id)}
+          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        >
+          重新配置
+        </Link>
       </header>
 
-      <section className="flex flex-col gap-2 rounded-xl border border-dashed p-10 text-sm text-muted-foreground">
-        <p>{game.name} 的棋盘与对局界面将在后续阶段接入。</p>
-        <p>当前路由已生效：{game.path}</p>
-      </section>
+      {Match === undefined ? (
+        <section className="flex flex-col gap-2 rounded-xl border border-dashed p-10 text-sm text-muted-foreground">
+          <p>{game.name} 的棋盘与对局界面将在后续阶段接入。</p>
+        </section>
+      ) : (
+        <Match />
+      )}
 
       <Link to={ROUTE_PATHS.home} className="w-fit text-sm underline underline-offset-4">
         返回首页

@@ -20,6 +20,7 @@ export function createInitialState(): GomokuState {
     status: 'playing',
     currentPlayer: 'black',
     winner: null,
+    endReason: null,
     lastMove: null,
     moveCount: 0,
   }
@@ -44,6 +45,48 @@ export function isCellEmpty(
   col: number,
 ): boolean {
   return isInBounds(size, row, col) && cells[indexOf(size, row, col)] === 'empty'
+}
+
+/** 假设 `side` 落在 (row, col)，是否立即形成 >=5 连线；不修改输入。 */
+export function wouldWinAt(
+  cells: readonly GomokuCellValue[],
+  size: number,
+  row: number,
+  col: number,
+  side: GomokuSide,
+): boolean {
+  if (!isCellEmpty(cells, size, row, col)) {
+    return false
+  }
+  for (const [forward, backward] of AXES) {
+    const length =
+      1 +
+      countRun(cells, size, row, col, side, forward) +
+      countRun(cells, size, row, col, side, backward)
+    if (length >= 5) {
+      return true
+    }
+  }
+  return false
+}
+
+function countRun(
+  cells: readonly GomokuCellValue[],
+  size: number,
+  row: number,
+  col: number,
+  side: GomokuSide,
+  dir: { readonly dr: number; readonly dc: number },
+): number {
+  let count = 0
+  let r = row + dir.dr
+  let c = col + dir.dc
+  while (isInBounds(size, r, c) && cells[indexOf(size, r, c)] === side) {
+    count += 1
+    r += dir.dr
+    c += dir.dc
+  }
+  return count
 }
 
 export function listLegalActions(
@@ -78,8 +121,8 @@ export function applyAction(
   if (action.type === 'resign') {
     const winner = opponentOf(playerId)
     return {
-      state: { ...state, currentPlayer: null, status: 'completed', winner },
-      events: [{ type: 'game.finished', result: { outcome: 'win', winner } }],
+      state: { ...state, currentPlayer: null, status: 'completed', winner, endReason: 'resign' },
+      events: [{ type: 'game.finished', result: { outcome: 'win', winner }, reason: 'resign' }],
     }
   }
 
@@ -94,20 +137,20 @@ export function applyAction(
 
   if (findWinningLine(cells, state.size, lastMove, playerId) !== null) {
     return {
-      state: { ...state, cells, lastMove, moveCount, currentPlayer: null, status: 'completed', winner: playerId },
+      state: { ...state, cells, lastMove, moveCount, currentPlayer: null, status: 'completed', winner: playerId, endReason: 'five' },
       events: [
         { type: 'piece.placed', playerId, row, col },
-        { type: 'game.finished', result: { outcome: 'win', winner: playerId } },
+        { type: 'game.finished', result: { outcome: 'win', winner: playerId }, reason: 'five' },
       ],
     }
   }
 
   if (isBoardFull(cells)) {
     return {
-      state: { ...state, cells, lastMove, moveCount, currentPlayer: null, status: 'completed', winner: null },
+      state: { ...state, cells, lastMove, moveCount, currentPlayer: null, status: 'completed', winner: null, endReason: 'board-full' },
       events: [
         { type: 'piece.placed', playerId, row, col },
-        { type: 'game.finished', result: { outcome: 'draw' } },
+        { type: 'game.finished', result: { outcome: 'draw' }, reason: 'board-full' },
       ],
     }
   }

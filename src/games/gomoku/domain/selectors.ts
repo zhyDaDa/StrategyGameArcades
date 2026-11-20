@@ -1,6 +1,6 @@
 import type { GameResult } from '@/core/contracts/result'
 import { findWinningLine } from './rules'
-import type { GomokuCellValue, GomokuCoord, GomokuState } from './types'
+import type { GomokuCellValue, GomokuCoord, GomokuEndReason, GomokuState } from './types'
 
 export function selectResult(state: Readonly<GomokuState>): GameResult | null {
   if (state.status !== 'completed') {
@@ -11,8 +11,13 @@ export function selectResult(state: Readonly<GomokuState>): GameResult | null {
     : { outcome: 'draw' }
 }
 
+export function selectEndReason(state: Readonly<GomokuState>): GomokuEndReason | null {
+  return state.endReason
+}
+
 export function selectWinningLine(state: Readonly<GomokuState>): readonly GomokuCoord[] {
-  if (state.lastMove === null || state.winner === null) {
+  // 认输时最后一步属于认输方，不能拿赢家去扫描，否则可能误判出假连线。
+  if (state.endReason !== 'five' || state.lastMove === null || state.winner === null) {
     return []
   }
   return findWinningLine(state.cells, state.size, state.lastMove, state.winner) ?? []
