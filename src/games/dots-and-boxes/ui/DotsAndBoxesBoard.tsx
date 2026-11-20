@@ -1,18 +1,15 @@
 import { motion } from 'motion/react'
 import { motionTokens } from '@/presentation/motion/tokens'
 import type { DotsBoardViewModel } from '../domain/selectors'
-import type {
-  DotsAndBoxesSeat,
-  DotsEdge,
-  DotsEdgeOrientation,
-} from '../domain/types'
-import { DOTS_SEAT_META, seatColor } from './seat-meta'
+import type { DotsEdge, DotsEdgeOrientation } from '../domain/types'
+import { DOTS_SEAT_META } from './seat-meta'
 import { SeatSymbol } from './SeatSymbol'
 
 export interface DotsAndBoxesBoardProps {
   readonly vm: DotsBoardViewModel
-  readonly currentPlayer: DotsAndBoxesSeat | null
   readonly interactive: boolean
+  /** 刚画下的边；只有它播放一次「由粗变细、由浅到深」的入场。 */
+  readonly freshEdge: DotsEdge | null
   /** 最近一次 transition 中刚被占领的方格索引，用于一次性刷色动画。 */
   readonly freshClaims: ReadonlySet<number>
   readonly onDrawEdge: (edge: DotsEdge) => void
@@ -23,46 +20,46 @@ const EDGE_HIT_SIZE = 20
 /**
  * 点阵棋盘。组件只负责几何呈现与连线点击，
  * 不判断得分或回合；一切归属与合法性都来自上层 Session 快照。
- * 坐标以「方格」为单位：第 r 行第 c 列方格的左上角就在 (c, r)。
+ * 线条不代表玩家，全部使用同一种墨色。
  */
 export function DotsAndBoxesBoard({
   vm,
-  currentPlayer,
   interactive,
+  freshEdge,
   freshClaims,
   onDrawEdge,
 }: DotsAndBoxesBoardProps) {
-  const { boxSize, boxes, horizontalEdges, verticalEdges, lastEdge } = vm
+  const { boxSize, boxes, horizontalEdges, verticalEdges } = vm
   const percent = (value: number) => `${(value / boxSize) * 100}%`
   const segment = `${100 / boxSize}%`
   const dotSize = `${(0.15 / boxSize) * 100}%`
-  const hintColor = currentPlayer === null ? 'transparent' : seatColor(currentPlayer)
 
   function renderEdge(
     orientation: DotsEdgeOrientation,
     row: number,
     col: number,
-    owner: DotsAndBoxesSeat | null,
+    drawn: boolean,
   ) {
     const horizontal = orientation === 'horizontal'
-    const isLast =
-      lastEdge !== null &&
-      lastEdge.orientation === orientation &&
-      lastEdge.row === row &&
-      lastEdge.col === col
-    const clickable = interactive && owner === null
+    const fresh =
+      freshEdge !== null &&
+      freshEdge.orientation === orientation &&
+      freshEdge.row === row &&
+      freshEdge.col === col
+    const clickable = interactive && !drawn
     const label = horizontal
       ? `第 ${row + 1} 横排第 ${col + 1} 段`
       : `第 ${col + 1} 竖排第 ${row + 1} 段`
+    const lineClass = horizontal
+      ? 'top-1/2 right-[3%] left-[3%] h-[3px] -translate-y-1/2'
+      : 'top-[3%] bottom-[3%] left-1/2 w-[3px] -translate-x-1/2'
 
     return (
       <button
         key={`${orientation}-${row}-${col}`}
         type="button"
         disabled={!clickable}
-        aria-label={
-          owner === null ? `连接${label}` : `${label}，已由${DOTS_SEAT_META[owner].label}连接`
-        }
+        aria-label={drawn ? `${label}，已画线` : `连接${label}`}
         onClick={() => onDrawEdge({ orientation, row, col })}
         className={[
           'group absolute z-10 -translate-x-1/2 -translate-y-1/2',
@@ -85,26 +82,33 @@ export function DotsAndBoxesBoard({
               }
         }
       >
-        {owner !== null ? (
-          <span
+        {drawn ? (
+          <motion.span
             aria-hidden="true"
-            className={[
-              'absolute rounded-full',
-              horizontal
-                ? `top-1/2 right-[3%] left-[3%] -translate-y-1/2 ${isLast ? 'h-[4px]' : 'h-[3px]'}`
-                : `top-[3%] bottom-[3%] left-1/2 -translate-x-1/2 ${isLast ? 'w-[4px]' : 'w-[3px]'}`,
-            ].join(' ')}
-            style={{ backgroundColor: seatColor(owner) }}
+            className={`absolute rounded-full bg-foreground/70 ${lineClass}`}
+            initial={
+              fresh
+                ? {
+                    opacity: 0.12,
+                    scaleX: horizontal ? 1.2 : 2.4,
+                    scaleY: horizontal ? 2.4 : 1.2,
+                  }
+                : false
+            }
+            animate={{ opacity: 1, scaleX: 1, scaleY: 1 }}
+            transition={{
+              duration: motionTokens.duration.deliberate,
+              ease: motionTokens.ease.out,
+            }}
           />
         ) : clickable ? (
           <span
             aria-hidden="true"
             className={[
-              'absolute rounded-full opacity-0 transition-opacity duration-150',
-              'group-hover:opacity-40 group-focus-visible:opacity-50',
-              horizontal ? 'top-1/2 right-[3%] left-[3%] h-[3px] -translate-y-1/2' : 'left-1/2 top-[3%] bottom-[3%] w-[3px] -translate-x-1/2',
+              'absolute rounded-full bg-foreground/30 opacity-0 transition-opacity duration-150',
+              'group-hover:opacity-100 group-focus-visible:opacity-100',
+              lineClass,
             ].join(' ')}
-            style={{ backgroundColor: hintColor }}
           />
         ) : null}
       </button>
@@ -117,10 +121,10 @@ export function DotsAndBoxesBoard({
         {boxes.map((owner, index) => {
           const row = Math.floor(index / boxSize)
           const col = index % boxSize
-          const fresh = freshClaims.has(index)
           if (owner === null) {
             return null
           }
+          const fresh = freshClaims.has(index)
 
           return (
             <div
@@ -137,7 +141,7 @@ export function DotsAndBoxesBoard({
               <motion.div
                 aria-hidden="true"
                 className="absolute inset-[7%] rounded-[3px]"
-                style={{ backgroundColor: seatColor(owner), opacity: 0.16 }}
+                style={{ backgroundColor: DOTS_SEAT_META[owner].color, opacity: 0.16 }}
                 initial={fresh ? { clipPath: 'inset(100% 0% 0% 100%)' } : false}
                 animate={{ clipPath: 'inset(0% 0% 0% 0%)' }}
                 transition={{
@@ -162,11 +166,11 @@ export function DotsAndBoxesBoard({
           )
         })}
 
-        {horizontalEdges.map((owner, index) =>
-          renderEdge('horizontal', Math.floor(index / boxSize), index % boxSize, owner),
+        {horizontalEdges.map((drawn, index) =>
+          renderEdge('horizontal', Math.floor(index / boxSize), index % boxSize, drawn),
         )}
-        {verticalEdges.map((owner, index) =>
-          renderEdge('vertical', Math.floor(index / (boxSize + 1)), index % (boxSize + 1), owner),
+        {verticalEdges.map((drawn, index) =>
+          renderEdge('vertical', Math.floor(index / (boxSize + 1)), index % (boxSize + 1), drawn),
         )}
 
         {Array.from({ length: (boxSize + 1) * (boxSize + 1) }, (_, index) => {

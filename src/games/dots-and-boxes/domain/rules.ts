@@ -12,8 +12,8 @@ import {
 /** 规则函数只需要局面里与边、格相关的部分；AI 的 Observation 也满足这个结构。 */
 export interface DotsEdgeBoard {
   readonly boxSize: number
-  readonly horizontalEdges: readonly (DotsAndBoxesSeat | null)[]
-  readonly verticalEdges: readonly (DotsAndBoxesSeat | null)[]
+  readonly horizontalEdges: readonly boolean[]
+  readonly verticalEdges: readonly boolean[]
   readonly boxes: readonly (DotsAndBoxesSeat | null)[]
 }
 
@@ -62,16 +62,14 @@ export function isEdgeInBounds(boxSize: number, edge: DotsEdge): boolean {
   return edge.row >= 0 && edge.row < boxSize && edge.col >= 0 && edge.col <= boxSize
 }
 
-export function edgeOwner(board: DotsEdgeBoard, edge: DotsEdge): DotsAndBoxesSeat | null {
+export function isEdgeDrawn(board: DotsEdgeBoard, edge: DotsEdge): boolean {
   if (!isEdgeInBounds(board.boxSize, edge)) {
     throw new Error(`边超出棋盘范围：${edge.orientation} (${edge.row}, ${edge.col})`)
   }
-  const index =
-    edge.orientation === 'horizontal'
-      ? horizontalEdgeIndex(board.boxSize, edge.row, edge.col)
-      : verticalEdgeIndex(board.boxSize, edge.row, edge.col)
-  const owner = edge.orientation === 'horizontal' ? board.horizontalEdges[index] : board.verticalEdges[index]
-  return owner ?? null
+  if (edge.orientation === 'horizontal') {
+    return board.horizontalEdges[horizontalEdgeIndex(board.boxSize, edge.row, edge.col)]
+  }
+  return board.verticalEdges[verticalEdgeIndex(board.boxSize, edge.row, edge.col)]
 }
 
 export function boxOwner(board: DotsEdgeBoard, box: DotsBox): DotsAndBoxesSeat | null {
@@ -99,12 +97,12 @@ export function countBoxEdges(board: DotsEdgeBoard, box: DotsBox): number {
     { orientation: 'vertical', row: box.row, col: box.col },
     { orientation: 'vertical', row: box.row, col: box.col + 1 },
   ]
-  return edges.filter((edge) => edgeOwner(board, edge) !== null).length
+  return edges.filter((edge) => isEdgeDrawn(board, edge)).length
 }
 
 /** 假设这根尚未画的边被画上后，会立刻完成哪些尚未归属的方格。 */
 export function completedBoxesIfDrawn(board: DotsEdgeBoard, edge: DotsEdge): readonly DotsBox[] {
-  if (edgeOwner(board, edge) !== null) {
+  if (isEdgeDrawn(board, edge)) {
     return []
   }
   return adjacentBoxesOfEdge(board.boxSize, edge).filter(
@@ -132,13 +130,12 @@ export function createInitialState(options: DotsInitialOptions): DotsAndBoxesSta
   return {
     boxSize,
     players,
-    horizontalEdges: Array<DotsAndBoxesSeat | null>(horizontalEdgeCount(boxSize)).fill(null),
-    verticalEdges: Array<DotsAndBoxesSeat | null>(verticalEdgeCount(boxSize)).fill(null),
+    horizontalEdges: Array<boolean>(horizontalEdgeCount(boxSize)).fill(false),
+    verticalEdges: Array<boolean>(verticalEdgeCount(boxSize)).fill(false),
     boxes: Array<DotsAndBoxesSeat | null>(boxCount(boxSize)).fill(null),
     currentPlayer: firstPlayer,
     status: 'playing',
     winner: null,
-    lastEdge: null,
     moveCount: 0,
   }
 }
@@ -167,14 +164,14 @@ export function listLegalActions(
 
   for (let row = 0; row <= boxSize; row += 1) {
     for (let col = 0; col < boxSize; col += 1) {
-      if (state.horizontalEdges[horizontalEdgeIndex(boxSize, row, col)] === null) {
+      if (!state.horizontalEdges[horizontalEdgeIndex(boxSize, row, col)]) {
         actions.push({ type: 'draw-edge', orientation: 'horizontal', row, col })
       }
     }
   }
   for (let row = 0; row < boxSize; row += 1) {
     for (let col = 0; col <= boxSize; col += 1) {
-      if (state.verticalEdges[verticalEdgeIndex(boxSize, row, col)] === null) {
+      if (!state.verticalEdges[verticalEdgeIndex(boxSize, row, col)]) {
         actions.push({ type: 'draw-edge', orientation: 'vertical', row, col })
       }
     }
@@ -197,7 +194,7 @@ export function applyAction(
   if (!isEdgeInBounds(state.boxSize, edge)) {
     throw new Error(`非法连线：边超出棋盘范围 ${action.orientation} (${action.row}, ${action.col})`)
   }
-  if (edgeOwner(state, edge) !== null) {
+  if (isEdgeDrawn(state, edge)) {
     throw new Error('非法连线：这两点之间已经有线')
   }
 
@@ -205,9 +202,9 @@ export function applyAction(
   const horizontalEdges = state.horizontalEdges.slice()
   const verticalEdges = state.verticalEdges.slice()
   if (edge.orientation === 'horizontal') {
-    horizontalEdges[horizontalEdgeIndex(state.boxSize, edge.row, edge.col)] = playerId
+    horizontalEdges[horizontalEdgeIndex(state.boxSize, edge.row, edge.col)] = true
   } else {
-    verticalEdges[verticalEdgeIndex(state.boxSize, edge.row, edge.col)] = playerId
+    verticalEdges[verticalEdgeIndex(state.boxSize, edge.row, edge.col)] = true
   }
 
   const boxes = state.boxes.slice()
@@ -238,7 +235,6 @@ export function applyAction(
         currentPlayer: null,
         status: 'completed',
         winner,
-        lastEdge: edge,
         moveCount,
       },
       events,
@@ -252,7 +248,6 @@ export function applyAction(
       verticalEdges,
       boxes,
       currentPlayer: completed.length > 0 ? playerId : nextPlayer(state.players, playerId),
-      lastEdge: edge,
       moveCount,
     },
     events,

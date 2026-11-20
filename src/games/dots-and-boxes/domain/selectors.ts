@@ -51,10 +51,9 @@ export function selectResult(state: Readonly<DotsAndBoxesState>): GameResult | n
 export interface DotsBoardViewModel {
   readonly boxSize: number
   readonly players: readonly DotsAndBoxesSeat[]
-  readonly horizontalEdges: readonly (DotsAndBoxesSeat | null)[]
-  readonly verticalEdges: readonly (DotsAndBoxesSeat | null)[]
+  readonly horizontalEdges: readonly boolean[]
+  readonly verticalEdges: readonly boolean[]
   readonly boxes: readonly (DotsAndBoxesSeat | null)[]
-  readonly lastEdge: DotsEdge | null
   readonly interactive: boolean
 }
 
@@ -66,9 +65,18 @@ export function selectDotsBoardViewModel(state: Readonly<DotsAndBoxesState>): Do
     horizontalEdges: state.horizontalEdges,
     verticalEdges: state.verticalEdges,
     boxes: state.boxes,
-    lastEdge: state.lastEdge,
     interactive: state.status === 'playing',
   }
+}
+
+/** 从一次 transition 的事件里取出刚画下的边，用于画线淡入动画。 */
+export function selectFreshEdge(events: readonly DotsAndBoxesEvent[]): DotsEdge | null {
+  for (const event of events) {
+    if (event.type === 'edge.drawn') {
+      return event.edge
+    }
+  }
+  return null
 }
 
 /** 从一次 transition 的事件里取出刚被占领的方格，用于一次性刷色动画。 */

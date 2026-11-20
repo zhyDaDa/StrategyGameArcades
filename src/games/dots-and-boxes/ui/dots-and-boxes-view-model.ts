@@ -41,7 +41,7 @@ export interface DotsViewMessage {
 export interface DotsAndBoxesViewProps {
   readonly board: DotsBoardViewModel
   readonly players: readonly DotsPlayerViewModel[]
-  readonly currentPlayer: DotsAndBoxesSeat | null
+  readonly freshEdge: DotsEdge | null
   readonly interactive: boolean
   readonly freshClaims: ReadonlySet<number>
   readonly canRequestUndo: boolean

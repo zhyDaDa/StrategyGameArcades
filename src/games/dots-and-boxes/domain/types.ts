@@ -32,17 +32,17 @@ export type DotsAndBoxesAction = {
 
 export type DotsAndBoxesStatus = 'playing' | 'completed'
 
-/** 只存事实：已画的边、归属方、当前玩家、终局赢家；分数由 boxes 派生。 */
+/** 只存事实：已画的边、方格归属、当前玩家、终局赢家；分数由 boxes 派生。 */
 export interface DotsAndBoxesState {
   readonly boxSize: number
   readonly players: readonly DotsAndBoxesSeat[]
-  readonly horizontalEdges: readonly (DotsAndBoxesSeat | null)[]
-  readonly verticalEdges: readonly (DotsAndBoxesSeat | null)[]
+  /** 边不记录归属：true 表示已画，false 表示仍可画。 */
+  readonly horizontalEdges: readonly boolean[]
+  readonly verticalEdges: readonly boolean[]
   readonly boxes: readonly (DotsAndBoxesSeat | null)[]
   readonly currentPlayer: DotsAndBoxesSeat | null
   readonly status: DotsAndBoxesStatus
   readonly winner: DotsAndBoxesSeat | null
-  readonly lastEdge: DotsEdge | null
   readonly moveCount: number
 }
 
@@ -63,11 +63,10 @@ export type DotsAndBoxesEvent =
 export interface DotsAndBoxesObservation {
   readonly boxSize: number
   readonly players: readonly DotsAndBoxesSeat[]
-  readonly horizontalEdges: readonly (DotsAndBoxesSeat | null)[]
-  readonly verticalEdges: readonly (DotsAndBoxesSeat | null)[]
+  readonly horizontalEdges: readonly boolean[]
+  readonly verticalEdges: readonly boolean[]
   readonly boxes: readonly (DotsAndBoxesSeat | null)[]
   readonly currentPlayer: DotsAndBoxesSeat | null
   readonly status: DotsAndBoxesStatus
-  readonly lastEdge: DotsEdge | null
   readonly moveCount: number
 }

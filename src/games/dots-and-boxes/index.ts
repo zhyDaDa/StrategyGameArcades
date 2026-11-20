@@ -7,6 +7,7 @@ export {
   selectScores,
   selectStandings,
   selectDotsBoardViewModel,
+  selectFreshEdge,
   selectClaimedBoxes,
   claimedBoxIndexes,
   type DotsBoardViewModel,

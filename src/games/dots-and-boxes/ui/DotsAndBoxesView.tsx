@@ -19,8 +19,8 @@ export function DotsAndBoxesView(props: DotsAndBoxesViewProps) {
 
         <DotsAndBoxesBoard
           vm={props.board}
-          currentPlayer={props.currentPlayer}
           interactive={props.interactive}
+          freshEdge={props.freshEdge}
           freshClaims={props.freshClaims}
           onDrawEdge={props.onDrawEdge}
         />

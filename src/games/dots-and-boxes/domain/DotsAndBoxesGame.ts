@@ -6,8 +6,8 @@ import { dotsAndBoxesActionSchema, dotsAndBoxesStateSchema } from './schema'
 import {
   applyAction,
   createInitialState as buildInitialState,
-  edgeOwner,
   isDotsAndBoxesSeat,
+  isEdgeDrawn,
   isEdgeInBounds,
   listLegalActions,
 } from './rules'
@@ -42,7 +42,7 @@ export class DotsAndBoxesGame extends BaseGame<
   constructor(options: DotsAndBoxesGameOptions) {
     super({
       id: 'dots-and-boxes',
-      rulesVersion: 1,
+      rulesVersion: 2,
       stateSchema: dotsAndBoxesStateSchema,
       actionSchema: dotsAndBoxesActionSchema,
     })
@@ -73,7 +73,6 @@ export class DotsAndBoxesGame extends BaseGame<
       boxes: state.boxes,
       currentPlayer: state.currentPlayer,
       status: state.status,
-      lastEdge: state.lastEdge,
       moveCount: state.moveCount,
     }
   }
@@ -108,6 +107,6 @@ export class DotsAndBoxesGame extends BaseGame<
     if (!isEdgeInBounds(state.boxSize, edge)) {
       return false
     }
-    return edgeOwner(state, edge) === null
+    return !isEdgeDrawn(state, edge)
   }
 }

@@ -48,7 +48,6 @@ describe('方格大战规则', () => {
       ['red', { type: 'draw-edge', orientation: 'horizontal', row: 0, col: 0 }],
     ])
     expect(state.currentPlayer).toBe('blue')
-    expect(state.lastEdge).toEqual({ orientation: 'horizontal', row: 0, col: 0 })
     expect(state.moveCount).toBe(1)
   })
 
@@ -115,9 +114,9 @@ describe('方格大战规则', () => {
   it('所有方格被占满时结束，唯一最高分获胜', () => {
     const base = createInitialState(TWO_PLAYER_OPTIONS)
     const size = base.boxSize
-    const horizontalEdges: (DotsAndBoxesSeat | null)[] = base.horizontalEdges.map(() => 'red')
-    horizontalEdges[horizontalEdgeIndex(size, size, size - 1)] = null
-    const verticalEdges = base.verticalEdges.map(() => 'red' as const)
+    const horizontalEdges: boolean[] = base.horizontalEdges.map(() => true)
+    horizontalEdges[horizontalEdgeIndex(size, size, size - 1)] = false
+    const verticalEdges = base.verticalEdges.map(() => true)
     const boxes: (DotsAndBoxesSeat | null)[] = base.boxes.map(() => 'red')
     boxes[boxIndex(size, size - 1, size - 1)] = null
 
@@ -150,9 +149,9 @@ describe('方格大战规则', () => {
   it('最高分并列时判平局', () => {
     const base = createInitialState(TWO_PLAYER_OPTIONS)
     const size = base.boxSize
-    const horizontalEdges = base.horizontalEdges.map(() => 'red' as const)
-    horizontalEdges[horizontalEdgeIndex(size, size, size - 1)] = null
-    const verticalEdges = base.verticalEdges.map(() => 'red' as const)
+    const horizontalEdges: boolean[] = base.horizontalEdges.map(() => true)
+    horizontalEdges[horizontalEdgeIndex(size, size, size - 1)] = false
+    const verticalEdges = base.verticalEdges.map(() => true)
     const boxes = base.boxes.map((_, index) =>
       index === size * size - 1 ? null : index % 2 === 0 ? ('blue' as const) : ('red' as const),
     )

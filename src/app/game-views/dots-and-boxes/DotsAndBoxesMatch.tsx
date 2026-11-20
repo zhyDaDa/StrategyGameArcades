@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { HumanController } from '@/controllers/HumanController'
 import type { PlayerId } from '@/core/contracts/player'
 import { GameSession } from '@/core/session/GameSession'
-import { DotsAndBoxesGreedyController } from '@/games/dots-and-boxes/ai/DotsAndBoxesGreedyController'
+import { DotsAndBoxesRandomController } from '@/games/dots-and-boxes/ai/DotsAndBoxesRandomController'
 import {
   DEFAULT_DOTS_MATCH_CONFIG,
   createDotsAndBoxesGame,
@@ -14,6 +14,7 @@ import {
   claimedBoxIndexes,
   selectClaimedBoxes,
   selectDotsBoardViewModel,
+  selectFreshEdge,
   type DotsAndBoxesAction,
   type DotsAndBoxesEvent,
   type DotsAndBoxesObservation,
@@ -117,6 +118,7 @@ export function DotsAndBoxesMatch() {
 
   const claimed = selectClaimedBoxes(snapshot.lastTransition.events)
   const freshClaims = claimedBoxIndexes(snapshot.state.boxSize, claimed)
+  const freshEdge = selectFreshEdge(snapshot.lastTransition.events)
   const pulseSeat = claimed.length > 0 ? claimed[0].seat : null
 
   const players = toDotsPlayersViewModel({
@@ -203,7 +205,7 @@ export function DotsAndBoxesMatch() {
     <DotsAndBoxesView
       board={selectDotsBoardViewModel(snapshot.state)}
       players={players}
-      currentPlayer={currentSeat}
+      freshEdge={freshEdge}
       interactive={interactive}
       freshClaims={freshClaims}
       canRequestUndo={undoRequester !== null}
@@ -278,7 +280,7 @@ function createSeats(config: DotsAndBoxesMatchConfig): DotsSeats {
       humans.set(seat.id, human)
       players.set(seat.id, { controller: human, role: 'human', undoPolicy: 'ask' })
     } else {
-      const ai = new DotsAndBoxesGreedyController(seat.id)
+      const ai = new DotsAndBoxesRandomController(seat.id)
       players.set(seat.id, { controller: ai, role: 'bot', undoPolicy: 'accept' })
     }
   }

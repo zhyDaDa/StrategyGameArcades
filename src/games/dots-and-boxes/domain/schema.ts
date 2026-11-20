@@ -4,7 +4,6 @@ import {
   boxCount,
   horizontalEdgeCount,
   isDotsBoardSize,
-  isEdgeInBounds,
   verticalEdgeCount,
 } from './rules'
 
@@ -26,19 +25,12 @@ export const dotsAndBoxesStateSchema = z
   .object({
     boxSize: boxSizeSchema,
     players: z.array(seatSchema).min(2).max(DOTS_AND_BOXES_SEATS.length),
-    horizontalEdges: z.array(nullableSeatSchema),
-    verticalEdges: z.array(nullableSeatSchema),
+    horizontalEdges: z.array(z.boolean()),
+    verticalEdges: z.array(z.boolean()),
     boxes: z.array(nullableSeatSchema),
     currentPlayer: nullableSeatSchema,
     status: z.enum(['playing', 'completed']),
     winner: nullableSeatSchema,
-    lastEdge: z
-      .object({
-        orientation: z.enum(['horizontal', 'vertical']),
-        row: z.number().int().min(0),
-        col: z.number().int().min(0),
-      })
-      .nullable(),
     moveCount: z.number().int().min(0),
   })
   .superRefine((state, ctx) => {
@@ -74,8 +66,5 @@ export const dotsAndBoxesStateSchema = z
     }
     if (state.winner !== null && !state.players.includes(state.winner)) {
       ctx.addIssue({ code: 'custom', path: ['winner'], message: '赢家不在本局玩家中' })
-    }
-    if (state.lastEdge !== null && !isEdgeInBounds(state.boxSize, state.lastEdge)) {
-      ctx.addIssue({ code: 'custom', path: ['lastEdge'], message: '最后一步的边超出棋盘范围' })
     }
   })

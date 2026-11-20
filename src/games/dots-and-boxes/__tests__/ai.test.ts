@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DotsAndBoxesGame } from '../domain/DotsAndBoxesGame'
-import { DotsAndBoxesGreedyController } from '../ai/DotsAndBoxesGreedyController'
+import { DotsAndBoxesRandomController } from '../ai/DotsAndBoxesRandomController'
 import type { DotsAndBoxesAction, DotsAndBoxesSeat, DotsAndBoxesState } from '../domain/types'
 
 const game = new DotsAndBoxesGame({
@@ -20,7 +20,7 @@ function play(
 }
 
 async function decide(state: DotsAndBoxesState, playerId: DotsAndBoxesSeat): Promise<DotsAndBoxesAction> {
-  const controller = new DotsAndBoxesGreedyController(playerId)
+  const controller = new DotsAndBoxesRandomController(playerId)
   return controller.decide({
     playerId,
     observation: game.observe(state, playerId),
