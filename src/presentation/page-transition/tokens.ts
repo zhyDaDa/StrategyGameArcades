@@ -1,26 +1,21 @@
-import { motionTokens } from '@/presentation/motion/tokens'
-
 /**
- * 页面切换专用节奏。公共时长从 motionTokens 取值，
- * 仅这里需要点阵网格、错峰、加载指示器等切换专属参数。
+ * Bubble Matrix 页面转场参数。所有节奏集中在这里，方便整体微调。
+ * 颜色不走这里：气泡使用 styles/global.css 的 --surface-raised（背景高亮色），
+ * 保证在 light / dark 两种主题下都与页面底色有明显区别。
  */
 export const pageTransitionTokens = {
-  /** 点阵网格边长（px），越大点越少、越大。 */
-  cellSize: 140,
-  /** 单点直径相对网格边长的倍数，保证相邻圆充分重叠、覆盖无缝隙。 */
-  dotDiameterFactor: 2.2,
-  /** 单个点放大 / 收缩耗时（秒）；覆盖与露出共用，速度完全一致。 */
-  dotDuration: motionTokens.duration.deliberate,
-  /** 相邻列之间的错峰间隔（秒）：覆盖从右往左，露出从左往右。 */
-  columnStagger: 0.045,
-  /** 动画结束后的提交缓冲（秒），避免边缘尚有缝隙时就切换路由。 */
-  settleBuffer: 0.04,
-  /** 加载指示器淡入延迟（秒）。 */
-  spinnerDelay: 0.12,
-  spinnerFadeDuration: motionTokens.duration.quick,
-  /**
-   * loading 阶段的最短停留（秒，从点阵完全覆盖开始计）。
-   * 与网络速度解耦：页面再快，spinner 也必须完整出现并停留一小段时间后才露出新页面。
-   */
-  loadingMinDuration: 0.8,
+  /** 网格基准边长（px）；实际单元会按视口均分后略作调整。 */
+  cellSize: 64,
+  /** 气泡数量上限；超大视口自动放大单元，避免上千个动画拖慢低性能设备。 */
+  maxBubbleCount: 900,
+  /** 气泡直径在网格对角线上的冗余（px），避免满屏后留下缝隙。 */
+  bubbleOverlap: 2,
+  /** 斜向波浪前沿相对垂直方向的倾角（度）。 */
+  waveAngle: 30,
+  /** 单个气泡放大 / 收缩耗时（秒），覆盖与露出共用。 */
+  waveDuration: 0.62,
+  /** 整个矩阵的首尾延迟差（秒）；相邻气泡延迟连续变化。 */
+  maxStagger: 0.55,
+  /** loading 阶段最短停留（秒）；页面再快也让加载指示器完整出现一次。 */
+  loadingMinDuration: 0.35,
 } as const

@@ -1,45 +1,66 @@
 import { pageTransitionTokens } from './tokens'
 
-export interface TransitionDot {
+export interface TransitionBubble {
   readonly id: string
   readonly x: number
   readonly y: number
-  /** 列索引，用于从右往左 / 从左往右的错峰。 */
-  readonly column: number
+  /** 该气泡的启动延迟（秒），由二维坐标投影算出。 */
+  readonly delay: number
 }
 
-export interface DotGrid {
+export interface BubbleMatrix {
   readonly columns: number
   readonly rows: number
-  readonly dots: readonly TransitionDot[]
+  /** 单气泡直径：单元对角线 + 冗余，满屏时相邻气泡互相重叠，覆盖无缝隙。 */
+  readonly diameter: number
+  readonly bubbles: readonly TransitionBubble[]
 }
 
 /**
- * 生成覆盖视口的点阵。网格向外多铺一圈，圆心间距等于 cellSize，
- * 单点直径大于两倍间距，因此相邻圆必然重叠、整屏可被完全覆盖。
+ * 斜向波浪延迟：把每个气泡中心按归一化坐标投影到一个倾斜波前上。
+ * 投影值越小越先启动，因此右上方最先、左下方最后，波前与垂直方向成 `angleDeg`。
+ *
+ * projection = (1 - x) + slope * (y - 0.5)
+ * slope = tan(angle) * aspect，用于把归一化的 x/y 换算到同一屏幕尺度。
  */
-export function buildDotGrid(width: number, height: number): DotGrid {
-  const { cellSize } = pageTransitionTokens
-  const columns = Math.ceil(width / cellSize) + 2
-  const rows = Math.ceil(height / cellSize) + 2
-  const dots: TransitionDot[] = []
+export function computeWaveDelay(
+  x: number,
+  y: number,
+  angleDeg: number,
+  aspect: number,
+  maxDelay: number,
+): number {
+  const slope = Math.tan((angleDeg * Math.PI) / 180) * aspect
+  const projection = (1 - x) + slope * (y - 0.5)
+  const progress = (projection + slope / 2) / (1 + slope)
+  const clamped = Math.max(0, Math.min(1, progress))
+  return clamped * maxDelay
+}
 
-  for (let column = 0; column < columns; column += 1) {
-    for (let row = 0; row < rows; row += 1) {
-      dots.push({
+/** 按视口均分网格；每个单元中心放一个气泡，直径覆盖整格对角线。 */
+export function buildBubbleMatrix(width: number, height: number): BubbleMatrix {
+  const { cellSize, maxBubbleCount, bubbleOverlap, waveAngle, maxStagger } = pageTransitionTokens
+  const fittedCellSize = Math.max(cellSize, Math.sqrt((width * height) / maxBubbleCount))
+  const columns = Math.max(1, Math.ceil(width / fittedCellSize))
+  const rows = Math.max(1, Math.ceil(height / fittedCellSize))
+  const cellWidth = width / columns
+  const cellHeight = height / rows
+  const diameter = Math.hypot(cellWidth, cellHeight) + bubbleOverlap
+  const aspect = height / width
+  const bubbles: TransitionBubble[] = []
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const x = (column + 0.5) * cellWidth
+      const y = (row + 0.5) * cellHeight
+      bubbles.push({
         id: `${column}-${row}`,
-        x: (column - 1) * cellSize + cellSize / 2,
-        y: (row - 1) * cellSize + cellSize / 2,
-        column,
+        x,
+        y,
+        delay: computeWaveDelay(x / width, y / height, waveAngle, aspect, maxStagger),
       })
     }
   }
 
-  return { columns, rows, dots }
-}
-
-/** 点阵覆盖 / 露出的总时长（秒），含最后一次错峰与提交缓冲。 */
-export function gridAnimationSeconds(grid: DotGrid): number {
-  const { columnStagger, dotDuration, settleBuffer } = pageTransitionTokens
-  return (grid.columns - 1) * columnStagger + dotDuration + settleBuffer
+  return { columns, rows, diameter, bubbles }
 }

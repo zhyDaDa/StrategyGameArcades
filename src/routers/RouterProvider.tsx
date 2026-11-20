@@ -32,10 +32,10 @@ function currentHref(): string {
 
 /**
  * 路由唯一入口。切换流程固定为：
- *   点击 → covering（旧页面退出）→ 提交 URL → loading（spinner 强制停留）→ revealing（新页面入场）→ idle
- * 页面加载在点击瞬间并行开始；但 loading 阶段至少停留 pageTransitionTokens.loadingMinDuration，
- * 所以页面再快，spinner 也一定会被完整看到。
- * 遮罩、计时、加载状态都由这里编排，页面本身只有「被渲染」和「发导航」两件事。
+ *   点击 → covering（气泡铺满旧页面）→ 提交 URL → loading（spinner 最短停留）→ revealing（气泡收缩露出新页面）→ idle
+ * covering / revealing 由气泡动画真正播完后的回调推进，不靠计时器猜时长；
+ * loading 阶段至少停留 pageTransitionTokens.loadingMinDuration，页面再快也能看到 spinner。
+ * 遮罩、阶段推进、加载状态都由这里编排，页面本身只有「被渲染」和「发导航」两件事。
  */
 export function RouterProvider({
   routes,
