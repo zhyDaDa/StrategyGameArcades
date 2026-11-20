@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { GAME_VIEWS } from '@/app/game-views/registry'
 import { saveStoredMatch, type MatchStartPayload } from '@/app/match-storage'
 import { GAMES } from '@/games/registry'
-import { Link, ROUTE_PATHS, gamePath, useRouter } from '@/routers'
+import { Link, gamePath, useRouter } from '@/routers'
 
 /**
  * 通用配置路由页：取 gameId、找到游戏专属配置视图，
@@ -23,9 +23,6 @@ export function GameConfigPage() {
           路径 <code className="rounded bg-muted px-1.5 py-0.5 text-xs">/config/{gameId ?? ''}</code>{' '}
           不在游戏注册表中。
         </p>
-        <Link to={ROUTE_PATHS.home} className="w-fit text-sm underline underline-offset-4">
-          返回首页
-        </Link>
       </main>
     )
   }
@@ -72,10 +69,6 @@ export function GameConfigPage() {
       ) : (
         <ConfigView onStart={handleStart} />
       )}
-
-      <Link to={ROUTE_PATHS.home} className="w-fit text-sm underline underline-offset-4">
-        返回首页
-      </Link>
     </main>
   )
 }

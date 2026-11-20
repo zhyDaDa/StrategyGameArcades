@@ -1,6 +1,8 @@
+import { House } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { NavBar } from '@/components/layout/NavBar/NavBar'
 import { ThemeToggle } from '@/components/layout/ThemeToggle/ThemeToggle'
+import { Button } from '@/components/ui/button'
 import { GAMES } from '@/games/registry'
 import { Link, ROUTE_PATHS, type RouteMatch } from '@/routers'
 import { NavMenu } from './NavMenu'
@@ -34,6 +36,15 @@ export function AppShell({ match, children }: AppShellProps) {
   return (
     <div className="flex min-h-dvh flex-col">
       <NavBar
+        leading={
+          match.route.id === 'home' ? null : (
+            <Button variant="ghost" size="icon" asChild>
+              <Link to={ROUTE_PATHS.home} aria-label="返回首页" title="返回首页">
+                <House />
+              </Link>
+            </Button>
+          )
+        }
         title={
           <Link
             to={ROUTE_PATHS.home}

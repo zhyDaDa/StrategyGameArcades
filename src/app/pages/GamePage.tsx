@@ -1,6 +1,6 @@
 import { GAME_VIEWS } from '@/app/game-views/registry'
 import { GAMES } from '@/games/registry'
-import { Link, ROUTE_PATHS, gameConfigPath, useRouter } from '@/routers'
+import { Link, gameConfigPath, useRouter } from '@/routers'
 
 /**
  * 游戏详情页骨架：只负责取路由参数、选定游戏并挂载组合根里的对局视图。
@@ -20,9 +20,6 @@ export function GamePage() {
           路径 <code className="rounded bg-muted px-1.5 py-0.5 text-xs">/games/{gameId ?? ''}</code>{' '}
           不在游戏注册表中。
         </p>
-        <Link to={ROUTE_PATHS.home} className="w-fit text-sm underline underline-offset-4">
-          返回首页
-        </Link>
       </main>
     )
   }
@@ -54,10 +51,6 @@ export function GamePage() {
       ) : (
         <Match />
       )}
-
-      <Link to={ROUTE_PATHS.home} className="w-fit text-sm underline underline-offset-4">
-        返回首页
-      </Link>
     </main>
   )
 }
