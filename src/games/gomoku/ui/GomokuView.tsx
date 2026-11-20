@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/button'
+import { MessageBar } from '@/components/game/MessageBar/MessageBar'
 import { GomokuActionBar } from './GomokuActionBar'
 import { GomokuBoard } from './GomokuBoard'
 import { GomokuStatusPanel } from './GomokuStatusPanel'
 import { GomokuUndoPrompt } from './GomokuUndoPrompt'
-import type { GomokuViewMessage, GomokuViewProps } from './gomoku-view-model'
+import type { GomokuViewProps } from './gomoku-view-model'
 
 export function GomokuView(props: GomokuViewProps) {
   const interactive =
@@ -13,7 +13,11 @@ export function GomokuView(props: GomokuViewProps) {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="flex min-w-0 flex-col gap-4">
         {props.message !== null ? (
-          <MessageBar message={props.message} onDismiss={props.onDismissMessage} />
+          <MessageBar
+            tone={props.message.type}
+            text={props.message.text}
+            onDismiss={props.onDismissMessage}
+          />
         ) : null}
         <GomokuBoard
           vm={props.board}
@@ -52,27 +56,3 @@ export function GomokuView(props: GomokuViewProps) {
   )
 }
 
-function MessageBar({
-  message,
-  onDismiss,
-}: {
-  readonly message: GomokuViewMessage
-  readonly onDismiss: () => void
-}) {
-  return (
-    <div
-      role={message.type === 'error' ? 'alert' : 'status'}
-      className={[
-        'flex items-start justify-between gap-3 rounded-xl border p-3 text-sm',
-        message.type === 'error'
-          ? 'border-destructive/40 bg-destructive/5 text-destructive'
-          : 'border-border bg-muted/50 text-muted-foreground',
-      ].join(' ')}
-    >
-      <p>{message.text}</p>
-      <Button variant="ghost" size="xs" onClick={onDismiss}>
-        关闭
-      </Button>
-    </div>
-  )
-}

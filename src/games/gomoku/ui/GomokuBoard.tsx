@@ -67,7 +67,7 @@ export function GomokuBoard({ vm, currentPlayer, interactive, onPlace }: GomokuB
               {isLast ? (
                 <span
                   aria-hidden="true"
-                  className="absolute top-[12%] right-[12%] z-20 h-1.5 w-1.5 rounded-full bg-primary"
+                  className="absolute top-1/2 left-1/2 z-20 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary"
                 />
               ) : null}
             </button>

@@ -1,5 +1,7 @@
+import { DotsAndBoxesConfigView } from '@/games/dots-and-boxes/config/DotsAndBoxesConfigView'
 import { GomokuConfigView } from '@/games/gomoku/config/GomokuConfigView'
 import type { GameId } from '@/games/registry'
+import { DotsAndBoxesMatch } from './dots-and-boxes/DotsAndBoxesMatch'
 import { GomokuMatch } from './gomoku/GomokuMatch'
 import type { GameViewEntry } from './types'
 
@@ -13,5 +15,11 @@ export const GAME_VIEWS: Partial<Record<GameId, GameViewEntry>> = {
       <GomokuConfigView onStart={(payload) => onStart(payload)} />
     ),
     Match: GomokuMatch,
+  },
+  'dots-and-boxes': {
+    Config: ({ onStart }) => (
+      <DotsAndBoxesConfigView onStart={(payload) => onStart(payload)} />
+    ),
+    Match: DotsAndBoxesMatch,
   },
 }
