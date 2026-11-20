@@ -2,7 +2,7 @@ import { animate } from 'motion/react'
 import { useEffect, useMemo, useRef } from 'react'
 import { motionTokens } from '@/presentation/motion/tokens'
 import { buildBubbleMatrix } from './layout'
-import { pageTransitionTokens } from './tokens'
+import { pageTransitionDebug, pageTransitionTokens } from './tokens'
 
 export type BubbleMatrixMode = 'cover' | 'reveal'
 
@@ -24,6 +24,7 @@ export function BubbleMatrix({ mode, width, height, onComplete }: BubbleMatrixPr
   const matrix = useMemo(() => buildBubbleMatrix(width, height), [width, height])
   const initialScale = mode === 'cover' ? 0 : 1
   const targetScale = mode === 'cover' ? 1 : 0
+  const freezeAt = mode === 'reveal' ? pageTransitionDebug.freezeRevealAt : null
 
   useEffect(() => {
     const container = containerRef.current
@@ -33,9 +34,10 @@ export function BubbleMatrix({ mode, width, height, onComplete }: BubbleMatrixPr
     if (elements.length === 0) return
 
     let cancelled = false
+    // 显式给出起止关键帧，避免依赖从 DOM 反读 transform，排除起始值解析失败的可能。
     const animation = animate(
       elements,
-      { scale: targetScale },
+      { scale: [initialScale, targetScale] },
       {
         duration: pageTransitionTokens.waveDuration,
         delay: (index) => matrix.bubbles[index]?.delay ?? 0,
@@ -43,20 +45,37 @@ export function BubbleMatrix({ mode, width, height, onComplete }: BubbleMatrixPr
       },
     )
 
-    void animation.finished
-      .catch(() => undefined)
-      .then(() => {
-        if (!cancelled) onComplete()
-      })
+    let freezeTimer: number | null = null
+
+    if (freezeAt === null) {
+      void animation.finished
+        .catch(() => undefined)
+        .then(() => {
+          if (!cancelled) onComplete()
+        })
+    } else {
+      // 调试：在整段波浪的指定进度处暂停，不再结束本阶段、不进入 idle。
+      const totalSeconds = pageTransitionTokens.maxStagger + pageTransitionTokens.waveDuration
+      const progress = Math.max(0, Math.min(1, freezeAt))
+      freezeTimer = window.setTimeout(() => {
+        animation.pause()
+      }, totalSeconds * progress * 1000)
+    }
 
     return () => {
       cancelled = true
+      if (freezeTimer !== null) window.clearTimeout(freezeTimer)
       animation.stop()
     }
-  }, [matrix, targetScale, onComplete])
+  }, [matrix, initialScale, targetScale, freezeAt, onComplete])
 
   return (
-    <div ref={containerRef} aria-hidden="true" className="fixed inset-0 z-50 overflow-hidden">
+    <div
+      ref={containerRef}
+      aria-hidden="true"
+      data-transition-phase={mode === 'cover' ? 'covering' : 'revealing'}
+      className="fixed inset-0 z-50 overflow-hidden"
+    >
       {matrix.bubbles.map((bubble) => (
         <div
           key={bubble.id}
