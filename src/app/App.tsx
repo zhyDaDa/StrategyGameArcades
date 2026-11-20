@@ -1,10 +1,11 @@
 import { MotionConfig } from 'motion/react'
-import { HomePage } from './pages/HomePage'
+import { RouterProvider } from '@/routers'
+import { ROUTES } from './routes'
 
 export function App() {
   return (
     <MotionConfig reducedMotion="user">
-      <HomePage />
+      <RouterProvider routes={ROUTES} fallbackRouteId="notFound" />
     </MotionConfig>
   )
 }

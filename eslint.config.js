@@ -15,6 +15,7 @@ const forbiddenAbove = [
   '@/controllers/**',
   '@/integrations/**',
   '@/systems/**',
+  '@/routers/**',
 ]
 
 export default tseslint.config(
@@ -64,8 +65,8 @@ export default tseslint.config(
           patterns: [
             { group: forbiddenUi, message: 'domain 不得依赖 React / Motion / 样式' },
             {
-              group: ['@/components/**', '@/presentation/**', '@/app/**', '@/games/*/ui/**', '@/games/registry'],
-              message: 'domain 不得依赖 UI 层或其它游戏',
+              group: ['@/components/**', '@/presentation/**', '@/app/**', '@/routers/**', '@/games/*/ui/**', '@/games/registry'],
+              message: 'domain 不得依赖 UI / 路由层或其它游戏',
             },
           ],
         },
@@ -81,7 +82,7 @@ export default tseslint.config(
         'error',
         {
           patterns: [
-            { group: ['@/games/**', '@/components/**', '@/app/**'], message: 'presentation 不得依赖具体游戏 / 组件 / app' },
+            { group: ['@/games/**', '@/components/**', '@/app/**', '@/routers/**'], message: 'presentation 不得依赖具体游戏 / 组件 / 路由 / app' },
           ],
         },
       ],
@@ -95,7 +96,7 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          patterns: [{ group: ['@/games/**', '@/app/**', '@/controllers/**'], message: 'components 不得依赖具体游戏 / app / controllers' }],
+          patterns: [{ group: ['@/games/**', '@/app/**', '@/controllers/**', '@/routers/**'], message: 'components 不得依赖具体游戏 / app / controllers / 路由' }],
         },
       ],
     },
@@ -110,7 +111,25 @@ export default tseslint.config(
         {
           patterns: [
             { group: forbiddenUi, message: 'controllers 不得依赖 React / Motion / 样式' },
-            { group: ['@/games/**', '@/components/**', '@/presentation/**', '@/app/**'], message: 'controllers 不得依赖具体游戏 / UI' },
+            { group: ['@/games/**', '@/components/**', '@/presentation/**', '@/app/**', '@/routers/**'], message: 'controllers 不得依赖具体游戏 / UI / 路由' },
+          ],
+        },
+      ],
+    },
+  },
+
+  // routers：路由层。可依赖 presentation 的通用页面过渡动画，不得依赖具体游戏 / app 页面。
+  {
+    files: ['src/routers/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/games/**', '@/controllers/**', '@/integrations/**', '@/app/**'],
+              message: 'routers 不得依赖具体游戏 / app 页面；页面应由 app/routes.tsx 注入',
+            },
           ],
         },
       ],

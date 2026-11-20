@@ -1,5 +1,12 @@
 import { GameCard } from '@/components/game/GameCard/GameCard'
 import { GAMES } from '@/games/registry'
+import { Link } from '@/routers/Link'
+
+const cardLinkClassName = [
+  'block rounded-xl outline-none transition-transform',
+  'motion-safe:hover:-translate-y-0.5',
+  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+].join(' ')
 
 export function HomePage() {
   return (
@@ -15,7 +22,9 @@ export function HomePage() {
       </header>
       <section className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {GAMES.map((game) => (
-          <GameCard key={game.id} {...game.toCardData()} />
+          <Link key={game.id} to={game.path} className={cardLinkClassName}>
+            <GameCard {...game.toCardData()} />
+          </Link>
         ))}
       </section>
     </main>

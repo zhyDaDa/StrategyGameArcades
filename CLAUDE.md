@@ -5,6 +5,8 @@
 > **优先级：正确性 > 简单性 > 复用 > 可扩展性 > 炫技。动效品质是产品核心，但不得污染规则层。**
 > 如果仓库尚未创建本文提到的某个文件，不要为了“目录完整”而提前创建空壳；只在真实需求出现时创建。
 
+**开发节奏：快速迭代 > 过度验证。** 优先采用短反馈周期的开发方式，避免不必要的探索、重复检查与过度设计。遇到影响实现方向的复杂问题或关键不确定性时，应及时向用户提问确认，不要自行做出未经验证的假设。完成主要代码并通过必要的静态检查、类型检查或测试后，应及时交付用户验收；除非用户明确要求，否则不要主动截图、启动浏览器进行视觉检查或反复验证界面效果。视觉与交互体验的最终反馈由用户提供，再据此迭代优化。
+
 ---
 
 ## 0. Claude 的工作方式（每次任务必读）
@@ -41,18 +43,18 @@
 
 ## 1. 技术约定与目标边界
 
-| 类别 | 选择 / 规则 |
-| --- | --- |
-| 语言 | TypeScript，启用 `strict` |
-| Web | React，函数组件 + Hooks |
-| 工具 | Vite（静态资源构建） |
-| 动画 | `motion`，从 `motion/react` 导入 |
-| 样式 | Less + CSS Modules，主题用 CSS 自定义属性 |
-| 校验 | Zod（存档和外部输入的运行时边界） |
-| 测试 | Vitest；组件测试按实际需求添加 |
-| 部署 | 静态网站；首版无自建服务端 |
-| 状态 | 游戏状态由 `GameSession` 唯一持有；React 管 UI 局部状态 |
-| AI | 同一个 `PlayerController` 协议接入人类、随机玩家、搜索算法和 LLM |
+| 类别 | 选择 / 规则                                                      |
+| ---- | ---------------------------------------------------------------- |
+| 语言 | TypeScript，启用 `strict`                                        |
+| Web  | React，函数组件 + Hooks                                          |
+| 工具 | Vite（静态资源构建）                                             |
+| 动画 | `motion`，从 `motion/react` 导入                                 |
+| 样式 | Less + CSS Modules，主题用 CSS 自定义属性                        |
+| 校验 | Zod（存档和外部输入的运行时边界）                                |
+| 测试 | Vitest；组件测试按实际需求添加                                   |
+| 部署 | 静态网站；首版无自建服务端                                       |
+| 状态 | 游戏状态由 `GameSession` 唯一持有；React 管 UI 局部状态          |
+| AI   | 同一个 `PlayerController` 协议接入人类、随机玩家、搜索算法和 LLM |
 
 初版仅支持：**离散行为、顺序回合、有限玩家、单机运行的决策游戏**。
 
@@ -193,21 +195,21 @@
 
 ### 文件应该放在哪里？快速判断
 
-| 需求 | 位置 |
-| --- | --- |
-| 所有游戏共享的状态转换/生命周期 | `src/core/` |
-| 游戏存档、恢复、行为日志 | `src/core/persistence/`、`src/core/history/` |
-| 多个游戏都需要的规则效果/资源机制 | `src/systems/`（至少两个真实使用场景再抽取） |
-| 人类、随机算法、LLM 玩家实现 | `src/controllers/` |
-| 模型提供商的 HTTP / Prompt / 输出解析 | `src/integrations/llm/` |
-| React 订阅游戏状态、通用 ViewModel | `src/presentation/` |
-| 全局 Motion 参数 / 复用动画 | `src/presentation/motion/` |
-| 通用按钮、对话框、游戏外壳 | `src/components/` |
-| 五子棋具体落子与胜负规则 | `src/games/gomoku/domain/` |
-| 五子棋棋盘交互与布局 | `src/games/gomoku/ui/` |
-| 五子棋特有动画映射 | `src/games/gomoku/motion/` |
-| 五子棋专有配色与质感 | `src/games/gomoku/styles/theme.less` |
-| 跨游戏色彩/排版/间距 | `src/styles/` |
+| 需求                                  | 位置                                         |
+| ------------------------------------- | -------------------------------------------- |
+| 所有游戏共享的状态转换/生命周期       | `src/core/`                                  |
+| 游戏存档、恢复、行为日志              | `src/core/persistence/`、`src/core/history/` |
+| 多个游戏都需要的规则效果/资源机制     | `src/systems/`（至少两个真实使用场景再抽取） |
+| 人类、随机算法、LLM 玩家实现          | `src/controllers/`                           |
+| 模型提供商的 HTTP / Prompt / 输出解析 | `src/integrations/llm/`                      |
+| React 订阅游戏状态、通用 ViewModel    | `src/presentation/`                          |
+| 全局 Motion 参数 / 复用动画           | `src/presentation/motion/`                   |
+| 通用按钮、对话框、游戏外壳            | `src/components/`                            |
+| 五子棋具体落子与胜负规则              | `src/games/gomoku/domain/`                   |
+| 五子棋棋盘交互与布局                  | `src/games/gomoku/ui/`                       |
+| 五子棋特有动画映射                    | `src/games/gomoku/motion/`                   |
+| 五子棋专有配色与质感                  | `src/games/gomoku/styles/theme.less`         |
+| 跨游戏色彩/排版/间距                  | `src/styles/`                                |
 
 > 约定：**通用视觉组件放 `components`；通用视觉逻辑放 `presentation`；游戏特有视觉放 `games/<id>/ui`。** 不要把游戏规则塞进 `components`，也不要把组件塞进 `core`。
 
@@ -249,21 +251,21 @@ app ──> 上述各层（唯一组合根）
 
 **先区分“是什么、现在怎样、刚刚发生什么”，再决定字段写在哪里。**
 
-| 词汇 | 固定语义 | 可存档？ |
-| --- | --- | --- |
-| `Definition` | 不可变的规则/实体定义，可能包含函数 | 不直接存储；保存其 ID |
-| `Instance` | 定义在一局游戏中的具体实例 | 是 |
-| `State` | 游戏当前唯一可信的运行时事实 | 是 |
-| `Action` | 玩家想做的事，提交前必须验证 | 可以记录 |
-| `Observation` | 当前玩家允许看到的信息 | 视规则决定 |
-| `Transition` | 一次行为的 `nextState + events` | 不直接作为游戏状态 |
-| `Event` | 规则已确认发生的领域事实 | 可独立记录用于回放/分析 |
-| `Selector` | 从 State 计算数据的纯函数 | 否 |
-| `Derived` | 静态或按 Context 计算的**展示属性** | 否 |
-| `ViewModel` | UI 消费的最终显示数据 | 通常不存 |
-| `AnimationCue` | 一次性的视听演出意图 | 不属于 Game State |
-| `Controller` | 将 Observation 转成 Action 的玩家决策者 | 不存为游戏规则 |
-| `Session` | 一局游戏的编排和唯一状态所有者 | 按需存快照 |
+| 词汇           | 固定语义                                | 可存档？                |
+| -------------- | --------------------------------------- | ----------------------- |
+| `Definition`   | 不可变的规则/实体定义，可能包含函数     | 不直接存储；保存其 ID   |
+| `Instance`     | 定义在一局游戏中的具体实例              | 是                      |
+| `State`        | 游戏当前唯一可信的运行时事实            | 是                      |
+| `Action`       | 玩家想做的事，提交前必须验证            | 可以记录                |
+| `Observation`  | 当前玩家允许看到的信息                  | 视规则决定              |
+| `Transition`   | 一次行为的 `nextState + events`         | 不直接作为游戏状态      |
+| `Event`        | 规则已确认发生的领域事实                | 可独立记录用于回放/分析 |
+| `Selector`     | 从 State 计算数据的纯函数               | 否                      |
+| `Derived`      | 静态或按 Context 计算的**展示属性**     | 否                      |
+| `ViewModel`    | UI 消费的最终显示数据                   | 通常不存                |
+| `AnimationCue` | 一次性的视听演出意图                    | 不属于 Game State       |
+| `Controller`   | 将 Observation 转成 Action 的玩家决策者 | 不存为游戏规则          |
+| `Session`      | 一局游戏的编排和唯一状态所有者          | 按需存快照              |
 
 ### 类型与 class 使用边界
 
@@ -633,19 +635,19 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 
 ### 命名规则
 
-| 对象 | 示例 | 禁止/避免 |
-| --- | --- | --- |
-| 游戏 ID | `gomoku`, `reversi` | `game1`, `myGame` |
-| 游戏规则类 | `GomokuGame` | `GomokuManager` |
-| 状态类型 | `GomokuState` | `Data`, `StoreObj` |
-| 行为类型 | `GomokuAction`、`type: "place"` | `doIt`, `actionType: 1` |
-| 领域事件 | `piece.placed`、`game.finished` | `animatePiece`, `playSound` |
-| 派生函数 | `selectWinner`, `selectAttack` | `calc2`, `getStuff` |
-| 状态效果定义 | `EffectDefinition` | 混合了层数、规则和 UI 的 `effectObj` |
-| 状态效果实例 | `EffectInstance` | 无稳定 ID 的匿名效果 |
-| 动画指令 | `AnimationCue` | 直接混进规则事件的 `scale`, `duration` |
-| React 组件 | `GomokuBoard.tsx` | `board.tsx`、`Board2.tsx` |
-| Less 模块 | `GomokuBoard.module.less` | 全局 `.board` 不加作用域 |
+| 对象         | 示例                            | 禁止/避免                              |
+| ------------ | ------------------------------- | -------------------------------------- |
+| 游戏 ID      | `gomoku`, `reversi`             | `game1`, `myGame`                      |
+| 游戏规则类   | `GomokuGame`                    | `GomokuManager`                        |
+| 状态类型     | `GomokuState`                   | `Data`, `StoreObj`                     |
+| 行为类型     | `GomokuAction`、`type: "place"` | `doIt`, `actionType: 1`                |
+| 领域事件     | `piece.placed`、`game.finished` | `animatePiece`, `playSound`            |
+| 派生函数     | `selectWinner`, `selectAttack`  | `calc2`, `getStuff`                    |
+| 状态效果定义 | `EffectDefinition`              | 混合了层数、规则和 UI 的 `effectObj`   |
+| 状态效果实例 | `EffectInstance`                | 无稳定 ID 的匿名效果                   |
+| 动画指令     | `AnimationCue`                  | 直接混进规则事件的 `scale`, `duration` |
+| React 组件   | `GomokuBoard.tsx`               | `board.tsx`、`Board2.tsx`              |
+| Less 模块    | `GomokuBoard.module.less`       | 全局 `.board` 不加作用域               |
 
 规则域中的命名以 **行为语义** 为主：`onApply`、`onTurnEnd`、`onExpire`。不要泛用 `init/cast/remove`：它们混淆“技能释放 / 效果生效 / 效果清除”。
 
@@ -705,13 +707,16 @@ Get-ChildItem src -Recurse -File |
 ## 13. 当前实施顺序（防止规范变成过度设计）
 
 ### Phase 1：五子棋的最小协议
+
 只实现：
+
 - `core`：State/Action/Observation/Transition 契约、`BaseGame`、`GameSession`、存档序列化。
 - `controllers`：Human / Random。
 - `games/gomoku/domain`：规则、Zod Schema、契约测试。
 - 能在无 React 的测试环境中自动完成 Random vs Random。
 
 ### Phase 2：完整视觉与动效
+
 - React 游戏外壳与 GomokuView。
 - `useGameSnapshot` + 派生 ViewModel。
 - Less token / theme / CSS Modules。
@@ -719,6 +724,7 @@ Get-ChildItem src -Recurse -File |
 - 本地双人、Human vs Random、Undo/Replay（按需求先后）。
 
 ### Phase 3：AI 与第二款游戏
+
 - LLM Controller 与静态部署安全边界。
 - 黑白棋接入，验证第二款游戏尽量不修改 `core`。
 - 只有两个游戏真正共享某套规则机制时，才提炼到 `systems/`。
