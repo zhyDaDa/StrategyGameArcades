@@ -72,6 +72,10 @@
 
     /* 背景高亮面：页面转场气泡色，必须与 --bg-primary 可区分。 */
     --surface-raised: color-mix(in srgb, var(--bg-primary) 25%, #ffffff);
+
+    /* 滚动条：无轨道、无箭头，只有一枚墨色拇指，悬浮时加深。 */
+    --scrollbar-thumb: color-mix(in srgb, var(--text-primary) 24%, transparent);
+    --scrollbar-thumb-hover: color-mix(in srgb, var(--text-primary) 46%, transparent);
 }
 
 [data-theme='dark'] {
@@ -94,6 +98,9 @@
 
     /* 深色主题下的背景高亮面：偏亮的炭色，气泡在深底上依然可见。 */
     --surface-raised: color-mix(in srgb, var(--bg-primary) 85%, var(--text-primary) 15%);
+
+    --scrollbar-thumb: color-mix(in srgb, var(--text-primary) 22%, transparent);
+    --scrollbar-thumb-hover: color-mix(in srgb, var(--text-primary) 42%, transparent);
 }
 
 /* shadcn 语义变量 → 上面的设计令牌，组件只消费语义变量。 */
@@ -139,4 +146,39 @@
   body {
     @apply bg-background text-foreground;
     }
+}
+
+/*
+ * 站内滚动区域：滚动只发生在内容容器内，绝不落到 window / html。
+ * 无轨道色、无两端箭头，拇指为半透明墨色，悬浮加深；gutter 常驻以免出现滚动条时内容跳动。
+ */
+@utility scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+  scrollbar-gutter: stable;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
 }

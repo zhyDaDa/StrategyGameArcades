@@ -1,5 +1,5 @@
 import { House } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { NavBar } from '@/components/layout/NavBar/NavBar'
 import { ThemeToggle } from '@/components/layout/ThemeToggle/ThemeToggle'
 import { Button } from '@/components/ui/button'
@@ -33,8 +33,14 @@ function resolveTitle(match: RouteMatch): string {
 }
 
 export function AppShell({ match, children }: AppShellProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, left: 0 })
+  }, [match.pathname])
+
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <NavBar
         leading={
           match.route.id === 'home' ? null : (
@@ -60,7 +66,12 @@ export function AppShell({ match, children }: AppShellProps) {
           </>
         }
       />
-      <div className="flex flex-1 flex-col">{children}</div>
+      <div
+        ref={scrollRef}
+        className="scroll-area flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain"
+      >
+        {children}
+      </div>
     </div>
   )
 }
