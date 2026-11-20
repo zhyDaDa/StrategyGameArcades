@@ -10,19 +10,20 @@
 
 一句话：**规则内核基本成型，首页已落地，棋盘/游戏页 UI 仍是空的。**
 
-| 层面 | 现状 | 完成度 |
-| --- | --- | --- |
-| `core/` 契约、BaseGame、Session、存档、重放 | 纯 TS，结构完整 | ~95% |
-| `games/gomoku/domain` | 完整，含规则/选择器/Schema/契约测试 | ~90% |
-| `games/reversi/domain` | 完整，强制跳步折叠进单次 transition | ~90% |
-| `controllers/` | Human / Random / LLM + abort | ~85% |
-| `integrations/llm/` | Anthropic + OpenAI 兼容两个 provider | ~70% |
-| `presentation/` | snapshot 桥、match 驱动、motion tokens/presets/types | ~50% |
-| 事件 → 动效链路 | cues 映射有了，但 Session 不发布 events，也无播放器 | ~20% |
-| 首页与基础 UI | shadcn/ui + GameModel 注册表 + 首页卡片 | ~30% |
-| 游戏页 / 棋盘 / 主题样式 | **未开始** | 0% |
-| 文案与工程配套（docs、ESLint 边界、README） | ESLint 部分生效；docs 全缺 | ~35% |
-| 测试 | 契约测试基本齐，缺若干边界 | ~65% |
+| 层面                                        | 现状                                                 | 完成度 |
+| ------------------------------------------- | ---------------------------------------------------- | ------ |
+| `core/` 契约、BaseGame、Session、存档、重放 | 纯 TS，结构完整                                      | ~95%   |
+| `games/gomoku/domain`                       | 完整，含规则/选择器/Schema/契约测试                  | ~90%   |
+| `games/reversi/domain`                      | 完整，强制跳步折叠进单次 transition                  | ~90%   |
+| `controllers/`                              | Human / Random / LLM + abort                         | ~85%   |
+| `integrations/llm/`                         | Anthropic + OpenAI 兼容两个 provider                 | ~70%   |
+| `presentation/`                             | snapshot 桥、match 驱动、motion tokens/presets/types | ~50%   |
+| 事件 → 动效链路                             | cues 映射有了，但 Session 不发布 events，也无播放器  | ~20%   |
+| 首页与基础 UI                               | shadcn/ui + GameModel 注册表 + 首页卡片              | ~30%   |
+| 全局页面转场（Bubble Matrix）               | 覆盖 / loading / 揭示三段式，斜向波浪                | ~90%   |
+| 游戏页 / 棋盘 / 主题样式                    | **未开始**                                           | 0%     |
+| 文案与工程配套（docs、ESLint 边界、README） | ESLint 部分生效；docs 全缺                           | ~35%   |
+| 测试                                        | 契约测试基本齐，缺若干边界                           | ~65%   |
 
 按 Phase 算：**Phase 1 ≈ 90%，Phase 2 ≈ 15%，Phase 3 ≈ 55%，整体 ≈ 45%。**
 
@@ -143,6 +144,54 @@ pnpm build
 
 ---
 
+## 全局页面转场（Bubble Matrix）
+
+文件都在 [src/presentation/page-transition](src/presentation/page-transition/)：
+
+| 文件                                                                                    | 职责                                                               |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [PageTransitionOverlay.tsx](src/presentation/page-transition/PageTransitionOverlay.tsx) | 按 phase 渲染背景层，并把常驻的 LoadingIndicator 叠在上面          |
+| [BubbleMatrix.tsx](src/presentation/page-transition/BubbleMatrix.tsx)                   | 气泡矩阵的覆盖 / 揭示动画（Motion 命令式 `animate()`，显式关键帧） |
+| [LoadingIndicator.tsx](src/presentation/page-transition/LoadingIndicator.tsx)           | 跨阶段常驻的 spinner：退场波浪前 1/3 淡入、揭示波浪前 1/3 淡出     |
+| [layout.ts](src/presentation/page-transition/layout.ts)                                 | 网格计算与 30° 斜向波浪延迟投影                                    |
+| [tokens.ts](src/presentation/page-transition/tokens.ts)                                 | 节奏参数与调试开关                                                 |
+
+流程由 [RouterProvider](src/routers/RouterProvider.tsx) 驱动：
+
+```text
+点击 → covering（气泡铺满旧页面）→ pushState → loading（加载新页面 + 最短停留）
+     → revealing（气泡收缩露出新页面）→ idle
+```
+
+- covering / revealing 由 `animation.finished` 真正结束推进，不用 `setTimeout` 估时长。
+- loading 阶段至少停留 `loadingMinDuration`，避免页面瞬间加载完时 spinner 一闪而过。
+- 气泡颜色使用 `global.css` 的 `--surface-raised`（背景高亮色，light / dark 分别定义）。**不要改回 `bg-background`**：和页面底色完全相同，气泡会彻底看不见。
+- 气泡直径 = 单元对角线 + 2px 冗余，满屏时相邻气泡重叠，覆盖无缝隙。
+
+### 调试开关（tokens.ts）
+
+- `forceWave`：忽略系统 `prefers-reduced-motion`，强制播放气泡波浪。调试动效时保持 `true`。
+- `freezeRevealAt`：reveal 播到指定进度（0~1）时 `pause()` 并停在画面上，不进入 idle；正式用设为 `null`。
+
+### 踩过的坑：动画完全不出来
+
+- **现象**：`loadingMinDuration` 改成 2 秒有效，但 `waveDuration` 改成 60 毫无反应；loading 结束后遮罩立刻就消失。
+- **根因**：系统 / 浏览器上报了 `prefers-reduced-motion: reduce`，`PageTransitionOverlay` 走进纯色淡入淡出的简化分支，**`BubbleMatrix` 根本没有挂载**，所以任何气泡参数都不会生效。
+- **排查顺序**（下次直接照做）：
+  1. 先确认动画组件有没有渲染（看 `data-transition-phase` 节点 / 临时日志），再怀疑动画 API；
+  2. 用「同一份配置文件里 A 生效、B 不生效」判断是代码路径没执行，而不是参数没生效；
+  3. DevTools → Rendering → Emulate CSS media feature `prefers-reduced-motion` 可复现。
+- **教训**：`useReducedMotion()` 是一个会静默关掉整棵动画树的开关；根部的 `MotionConfig reducedMotion="user"` 还会让所有 `motion.*` 组件一起降级。调试动效前先看这个。
+
+### Motion 14 经验
+
+- `motion/react` 的 `animate()` 可以直接动画普通 DOM 元素，支持元素数组 + `delay: (i, total) => number` 做二维波浪错峰，不需要为每个气泡写一个 `motion.div`。
+- 显式给 `scale: [from, to]`，不要依赖从 computed style 反读起始 transform。
+- 阶段推进用 `animation.finished`；卸载 / 重跑时 `animation.stop()`，避免残留动画。
+- 独立的 `animate()` 不受 `MotionConfig reducedMotion="user"` 直接控制，但**自己在组件里写的 `useReducedMotion()` 分支**会——这次就是栽在这里。
+
+---
+
 ## 实际依赖关系（已实现部分）
 
 ```text
@@ -224,16 +273,16 @@ export const gomokuGameModel = new GameModel({
 
 ## 需要调整（小修，不改变结构）
 
-| # | 位置 | 问题 | 调整 |
-| --- | --- | --- | --- |
-| 1 | [useGameMatch.ts](src/presentation/hooks/useGameMatch.ts) | `.catch(() => {})` 静默吞掉 Controller 失败 | 暴露 error，至少给调用方一个可展示/可记录的失败状态 |
-| 2 | [GameSession.reset()](src/core/session/GameSession.ts) | 清了历史但 `nextSequence` 继续累加 | 重置为 0 |
-| 3 | [gomoku/schema.ts](src/games/gomoku/domain/schema.ts) | `size` 任意正数、`cells` 长度写死 225 | 锁死 size，或让长度跟随 size |
-| 4 | [gomoku/rules.ts](src/games/gomoku/domain/rules.ts) | `isBoardFull` 只看 cells 不看 size | 与上一条保持一致 |
-| 5 | [reversi/schema.ts](src/games/reversi/domain/schema.ts) | `lastMove.row/col` 无边界，`flipped` 有边界 | 统一用 coordSchema |
-| 6 | `games/*/index.ts` | barrel 直接 re-export 未实现的 UI | ✅ 已删除，UI 落地后再加回 |
-| 7 | [main.tsx](src/main.tsx) | import 了 5 个不存在的 less 文件 | ✅ 已改为只引入 `styles/global.css` |
-| 8 | 测试 | `observe` 只测了「没有 winner 字段」，没测真正的不完全信息场景 | 目前两款都是完全信息游戏，等出现隐藏信息游戏再补强 |
+| #   | 位置                                                      | 问题                                                           | 调整                                                |
+| --- | --------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------------------- |
+| 1   | [useGameMatch.ts](src/presentation/hooks/useGameMatch.ts) | `.catch(() => {})` 静默吞掉 Controller 失败                    | 暴露 error，至少给调用方一个可展示/可记录的失败状态 |
+| 2   | [GameSession.reset()](src/core/session/GameSession.ts)    | 清了历史但 `nextSequence` 继续累加                             | 重置为 0                                            |
+| 3   | [gomoku/schema.ts](src/games/gomoku/domain/schema.ts)     | `size` 任意正数、`cells` 长度写死 225                          | 锁死 size，或让长度跟随 size                        |
+| 4   | [gomoku/rules.ts](src/games/gomoku/domain/rules.ts)       | `isBoardFull` 只看 cells 不看 size                             | 与上一条保持一致                                    |
+| 5   | [reversi/schema.ts](src/games/reversi/domain/schema.ts)   | `lastMove.row/col` 无边界，`flipped` 有边界                    | 统一用 coordSchema                                  |
+| 6   | `games/*/index.ts`                                        | barrel 直接 re-export 未实现的 UI                              | ✅ 已删除，UI 落地后再加回                          |
+| 7   | [main.tsx](src/main.tsx)                                  | import 了 5 个不存在的 less 文件                               | ✅ 已改为只引入 `styles/global.css`                 |
+| 8   | 测试                                                      | `observe` 只测了「没有 winner 字段」，没测真正的不完全信息场景 | 目前两款都是完全信息游戏，等出现隐藏信息游戏再补强  |
 
 ---
 

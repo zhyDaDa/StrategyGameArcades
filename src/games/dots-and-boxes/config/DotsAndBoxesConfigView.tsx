@@ -110,7 +110,7 @@ export function DotsAndBoxesConfigView({ onStart }: DotsAndBoxesConfigViewProps)
                 <div
                   key={seat}
                   className={[
-                    'flex flex-col rounded-xl border p-4 transition-colors',
+                    'flex flex-col rounded-xl border p-4 transition-colors duration-300 ease-out',
                     type === 'human' ? 'bg-card' : 'bg-muted/30',
                   ].join(' ')}
                 >
@@ -137,7 +137,7 @@ export function DotsAndBoxesConfigView({ onStart }: DotsAndBoxesConfigViewProps)
                             title={aiDisabled ? '至少需要保留一位玩家' : undefined}
                             onClick={() => changeSeatType(seat, value)}
                             className={[
-                              'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                              'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-300 ease-out',
                               type === value
                                 ? 'bg-primary text-primary-foreground'
                                 : aiDisabled
@@ -157,7 +157,7 @@ export function DotsAndBoxesConfigView({ onStart }: DotsAndBoxesConfigViewProps)
                         disabled={youSeat === seat}
                         onClick={() => setYouSeat(seat)}
                         className={[
-                          'rounded-md border px-2.5 py-1 text-xs transition-colors',
+                          'rounded-md border px-2.5 py-1 text-xs transition-colors duration-300 ease-out',
                           youSeat === seat
                             ? 'cursor-default border-primary/50 bg-primary/5 text-primary'
                             : 'hover:bg-muted',
@@ -183,7 +183,7 @@ export function DotsAndBoxesConfigView({ onStart }: DotsAndBoxesConfigViewProps)
                 aria-pressed={boxSize === size}
                 onClick={() => setBoxSize(size)}
                 className={[
-                  'flex flex-col gap-1 rounded-xl border p-3 text-left transition-colors',
+                  'flex flex-col gap-1 rounded-xl border p-3 text-left transition-colors duration-300 ease-out',
                   boxSize === size ? 'border-primary bg-primary/5' : 'hover:bg-muted',
                 ].join(' ')}
               >

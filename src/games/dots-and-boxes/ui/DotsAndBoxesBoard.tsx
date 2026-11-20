@@ -2,6 +2,7 @@ import { motion } from 'motion/react'
 import { motionTokens } from '@/presentation/motion/tokens'
 import type { DotsBoardViewModel } from '../domain/selectors'
 import type { DotsEdge, DotsEdgeOrientation } from '../domain/types'
+import { dotsMotion } from '../motion/timings'
 import { DOTS_SEAT_META } from './seat-meta'
 import { SeatSymbol } from './SeatSymbol'
 
@@ -10,6 +11,8 @@ export interface DotsAndBoxesBoardProps {
   readonly interactive: boolean
   /** 刚画下的边；只有它播放一次「由粗变细、由浅到深」的入场。 */
   readonly freshEdge: DotsEdge | null
+  /** 当前 transition 的版本号，作为动画 key，确保每次画线都会重新挂载并播放。 */
+  readonly drawVersion: number
   /** 最近一次 transition 中刚被占领的方格索引，用于一次性刷色动画。 */
   readonly freshClaims: ReadonlySet<number>
   readonly onDrawEdge: (edge: DotsEdge) => void
@@ -26,6 +29,7 @@ export function DotsAndBoxesBoard({
   vm,
   interactive,
   freshEdge,
+  drawVersion,
   freshClaims,
   onDrawEdge,
 }: DotsAndBoxesBoardProps) {
@@ -84,28 +88,26 @@ export function DotsAndBoxesBoard({
       >
         {drawn ? (
           <motion.span
+            key={fresh ? `line-${orientation}-${row}-${col}-${drawVersion}` : `line-${orientation}-${row}-${col}`}
             aria-hidden="true"
             className={`absolute rounded-full bg-foreground/70 ${lineClass}`}
             initial={
               fresh
                 ? {
-                    opacity: 0.12,
-                    scaleX: horizontal ? 1.2 : 2.4,
-                    scaleY: horizontal ? 2.4 : 1.2,
+                    opacity: 0,
+                    scaleX: horizontal ? 1 : 3.6,
+                    scaleY: horizontal ? 3.6 : 1,
                   }
                 : false
             }
             animate={{ opacity: 1, scaleX: 1, scaleY: 1 }}
-            transition={{
-              duration: motionTokens.duration.deliberate,
-              ease: motionTokens.ease.out,
-            }}
+            transition={dotsMotion.lineDraw}
           />
         ) : clickable ? (
           <span
             aria-hidden="true"
             className={[
-              'absolute rounded-full bg-foreground/30 opacity-0 transition-opacity duration-150',
+              'absolute rounded-full bg-foreground/40 opacity-0 transition-opacity duration-300 ease-out',
               'group-hover:opacity-100 group-focus-visible:opacity-100',
               lineClass,
             ].join(' ')}

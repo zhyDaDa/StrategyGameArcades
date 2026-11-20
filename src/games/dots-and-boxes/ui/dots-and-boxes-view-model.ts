@@ -42,6 +42,7 @@ export interface DotsAndBoxesViewProps {
   readonly board: DotsBoardViewModel
   readonly players: readonly DotsPlayerViewModel[]
   readonly freshEdge: DotsEdge | null
+  readonly drawVersion: number
   readonly interactive: boolean
   readonly freshClaims: ReadonlySet<number>
   readonly canRequestUndo: boolean

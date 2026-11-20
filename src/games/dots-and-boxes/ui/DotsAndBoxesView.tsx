@@ -1,3 +1,4 @@
+import { MotionConfig } from 'motion/react'
 import { MessageBar } from '@/components/game/MessageBar/MessageBar'
 import { DotsActionBar } from './DotsActionBar'
 import { DotsAndBoxesBoard } from './DotsAndBoxesBoard'
@@ -7,7 +8,13 @@ import type { DotsAndBoxesViewProps } from './dots-and-boxes-view-model'
 
 export function DotsAndBoxesView(props: DotsAndBoxesViewProps) {
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    /**
+     * 本游戏的落线与回合反馈是核心玩法信息：系统开启「减少动画效果」时，
+     * reduced-motion 会把这些 top / scale 动画直接跳到终值，等于把反馈藏掉。
+     * 因此只在这个游戏子树内忽略系统偏好，站内其余页面仍遵循全局设置。
+     */
+    <MotionConfig reducedMotion="never">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="flex min-w-0 flex-col gap-4">
         {props.message !== null ? (
           <MessageBar
@@ -21,6 +28,7 @@ export function DotsAndBoxesView(props: DotsAndBoxesViewProps) {
           vm={props.board}
           interactive={props.interactive}
           freshEdge={props.freshEdge}
+          drawVersion={props.drawVersion}
           freshClaims={props.freshClaims}
           onDrawEdge={props.onDrawEdge}
         />
@@ -60,6 +68,7 @@ export function DotsAndBoxesView(props: DotsAndBoxesViewProps) {
           onBackToConfig={props.onBackToConfig}
         />
       </aside>
-    </div>
+      </div>
+    </MotionConfig>
   )
 }

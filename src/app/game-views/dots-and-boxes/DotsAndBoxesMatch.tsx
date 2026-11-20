@@ -206,6 +206,7 @@ export function DotsAndBoxesMatch() {
       board={selectDotsBoardViewModel(snapshot.state)}
       players={players}
       freshEdge={freshEdge}
+      drawVersion={snapshot.version}
       interactive={interactive}
       freshClaims={freshClaims}
       canRequestUndo={undoRequester !== null}

@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { motionTokens } from '@/presentation/motion/tokens'
+import { dotsMotion } from '../motion/timings'
 import type { DotsPlayerViewModel } from './dots-and-boxes-view-model'
 import { SeatBadge } from './SeatBadge'
 
@@ -32,12 +32,12 @@ export function DotsPlayersPanel({ players }: DotsPlayersPanelProps) {
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-x-0 top-0 rounded-lg border border-primary/40 bg-primary/10"
                 style={{ height: ROW_HEIGHT_PX }}
-                initial={{ opacity: 0, y: currentIndex * (ROW_HEIGHT_PX + ROW_GAP_PX) }}
-                animate={{ opacity: 1, y: currentIndex * (ROW_HEIGHT_PX + ROW_GAP_PX) }}
+                initial={{ opacity: 0, top: currentIndex * (ROW_HEIGHT_PX + ROW_GAP_PX) }}
+                animate={{ opacity: 1, top: currentIndex * (ROW_HEIGHT_PX + ROW_GAP_PX) }}
                 exit={{ opacity: 0 }}
                 transition={{
-                  duration: motionTokens.duration.normal,
-                  ease: motionTokens.ease.out,
+                  top: dotsMotion.slabMove,
+                  opacity: { duration: 0.24 },
                 }}
               >
                 <motion.svg
@@ -45,11 +45,8 @@ export function DotsPlayersPanel({ players }: DotsPlayersPanelProps) {
                   viewBox="0 0 12 16"
                   className="absolute top-1/2 left-2 h-4 w-3 -translate-y-1/2 text-primary"
                   initial={current.pulseVersion !== null ? { scale: 1 } : false}
-                  animate={current.pulseVersion !== null ? { scale: [1, 1.45, 1] } : { scale: 1 }}
-                  transition={{
-                    duration: motionTokens.duration.deliberate,
-                    ease: motionTokens.ease.out,
-                  }}
+                  animate={current.pulseVersion !== null ? { scale: [1, 1.5, 1] } : { scale: 1 }}
+                  transition={dotsMotion.arrowPulse}
                 >
                   <path d="M0 0 L12 8 L0 16 Z" fill="currentColor" />
                 </motion.svg>
@@ -74,10 +71,7 @@ export function DotsPlayersPanel({ players }: DotsPlayersPanelProps) {
                 className="text-lg font-semibold tabular-nums"
                 initial={player.pulseVersion !== null ? { scale: 1 } : false}
                 animate={player.pulseVersion !== null ? { scale: [1, 1.2, 1] } : { scale: 1 }}
-                transition={{
-                  duration: motionTokens.duration.deliberate,
-                  ease: motionTokens.ease.out,
-                }}
+                transition={dotsMotion.scorePulse}
               >
                 {player.score}
               </motion.span>

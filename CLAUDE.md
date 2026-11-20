@@ -741,3 +741,45 @@ Get-ChildItem src -Recurse -File |
 
 > 永远优先询问：**这个数据是“事实”还是“派生展示”？这个逻辑是“规则”还是“演出”？这段能力已经存在于哪个层？**
 > 如果三个问题都回答清楚，通常不需要重构整个架构。
+
+---
+
+## 14. 动效排查铁律：先确认「是否被 reduced-motion 静默降级」
+
+> ⚠️ **最高优先级。任何“动画没出来 / 瞬间到位 / 看不到动效”的问题，必须按下面顺序排查，禁止第一反应去读 Motion 源码或反复改 duration。**
+
+### 14.1 固定排查顺序
+
+1. **先确认节点是否渲染**：给阶段/动画根节点加 `data-*` 标记，或在 Elements / console 中确认节点存在。节点不存在时，问题不在动画参数。
+2. **再确认系统是否开启了「减少动画效果」**：
+   - Windows：设置 → 辅助功能 → 视觉效果 → 动画效果。
+   - Chromium 会据此上报 `prefers-reduced-motion: reduce`。
+   - 可在 DevTools → Rendering → Emulate CSS media feature `prefers-reduced-motion` 直接复现。
+3. **最后才检查 Motion API / 时长 / 缓动 / 令牌**。
+4. **验收必须覆盖 reduced-motion 开启与关闭两种状态**，确认关键反馈都能被看到。
+
+### 14.2 Motion v14 的确定行为（`motion-dom` 源码事实）
+
+- `MotionConfig reducedMotion="user"` 会读取系统偏好。
+- 当 reduced motion 生效时，`positionalKeys` 中的属性会被强制以 `{ type: false }` 运行，**直接跳到终值，不产生动画**。
+- `positionalKeys` 包含：
+  - `width / height / top / left / right / bottom`
+  - 所有 transform 简写：`x / y / scale / scaleX / scaleY / rotate / rotateX / rotateY / rotateZ / skew / skewX / skewY / transformPerspective`
+- `opacity`、`backgroundColor` 等非 positional 属性仍会正常动画。
+- 因此：**只改 duration 不会解决 reduced-motion 导致的“没有动画”**；必须先确认是否被降级。
+
+### 14.3 本项目的强制约定
+
+- App 顶层保留 `MotionConfig reducedMotion="user"`，站内普通页面尊重系统偏好。
+- 若某款游戏的**核心玩法反馈**（落子线、当前玩家指示、得分/回合演出等）必须在 reduced-motion 下也可见：
+  - 必须在该游戏视图子树内显式包裹 `<MotionConfig reducedMotion="never">`；
+  - 必须用注释说明为什么在这里覆盖系统偏好；
+  - 覆盖范围只限该游戏，不得把全站改成 `never`。
+- 纯 CSS transition 不受 `MotionConfig` 影响，但也必须验证 reduced-motion 状态。
+- **禁止**把“已经写了动画代码”当作完成标准；必须实际确认动画在开启 reduced-motion 的机器上仍然执行。
+
+### 14.4 历史事故（2026-11-20）
+
+方格大战（`dots-and-boxes`）的衬底移动（`top`）、画线缩放（`scaleX/scaleY`）、三角脉冲（`scale`）全部在 reduced-motion 下被 Motion 直接跳到终值，表现为“什么动画都没有”。同文件的方格刷色（`clipPath`）却正常，因为 `clipPath` 不在 `positionalKeys` 中。最终通过局部 `<MotionConfig reducedMotion="never">` 解决。同类问题此前也出现在页面转场：reduced-motion 分支静默换掉了整层气泡动画。
+
+**结论：动画不出来时，先问“它有没有被渲染、有没有被 reduced-motion 静默关掉”，再问“它动得对不对”。**
