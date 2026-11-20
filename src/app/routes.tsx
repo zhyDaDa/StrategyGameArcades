@@ -23,6 +23,14 @@ export const ROUTES: readonly RouteDefinition[] = [
     },
   },
   {
+    id: 'settings',
+    pattern: ROUTE_PATHS.settings,
+    load: async () => {
+      const { SettingsPage } = await import('./pages/SettingsPage')
+      return { Page: SettingsPage }
+    },
+  },
+  {
     id: 'notFound',
     pattern: ROUTE_PATHS.notFound,
     load: async () => {

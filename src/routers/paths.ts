@@ -1,5 +1,5 @@
 /** 站内路径的唯一来源：链接、跳转与路由注册都从这里取值。 */
-export const ROUTE_IDS = ['home', 'game', 'notFound'] as const
+export const ROUTE_IDS = ['home', 'game', 'settings', 'notFound'] as const
 
 export type RouteId = (typeof ROUTE_IDS)[number]
 
@@ -10,6 +10,7 @@ export type RouteId = (typeof ROUTE_IDS)[number]
 export const ROUTE_PATHS: Record<RouteId, string> = {
   home: '/',
   game: '/games/:gameId',
+  settings: '/settings',
   notFound: '*',
 }
 

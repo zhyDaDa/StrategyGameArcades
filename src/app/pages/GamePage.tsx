@@ -14,7 +14,7 @@ export function GamePage() {
 
   if (game === undefined) {
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col justify-center gap-4 px-6">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-4 px-6">
         <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground">GAME / 未知游戏</p>
         <h1 className="text-3xl font-semibold tracking-tight">没有这个游戏</h1>
         <p className="text-sm text-muted-foreground">
@@ -29,7 +29,7 @@ export function GamePage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-10 px-6 py-16">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-6 py-16">
       <header className="flex flex-col gap-3 border-b pb-8">
         <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground">
           TABLE / 桌游实验室

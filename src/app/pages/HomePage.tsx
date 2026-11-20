@@ -10,7 +10,7 @@ const cardLinkClassName = [
 
 export function HomePage() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-10 px-6 py-16">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-6 py-16">
       <header className="flex flex-col gap-3 border-b pb-8">
         <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground">
           TABLE / 桌游实验室

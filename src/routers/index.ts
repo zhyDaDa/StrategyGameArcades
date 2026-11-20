@@ -7,6 +7,7 @@ export type {
   LoadedRoutePage,
   NavigationPhase,
   RouteDefinition,
+  RouteLayoutRenderer,
   RouteLoadResult,
   RouteMatch,
   RouteTarget,

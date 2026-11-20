@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 import type { PageTransitionPhase } from '@/presentation/page-transition'
 import type { RouteId } from './paths'
 
@@ -34,6 +34,12 @@ export interface RouteTarget {
   /** 点击链接时立即开始加载；结果无论成败都 resolve，避免未处理 rejection。 */
   readonly loadResult: Promise<RouteLoadResult>
 }
+
+/**
+ * 页面外壳由 app 层注入：router 只提供当前页面与路由匹配，
+ * 不感知导航栏、标题或任何具体游戏。
+ */
+export type RouteLayoutRenderer = (page: ReactNode, match: RouteMatch) => ReactNode
 
 export interface ActiveRoute {
   readonly pathname: string

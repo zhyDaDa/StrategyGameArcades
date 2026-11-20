@@ -59,7 +59,7 @@ pnpm build
 - Tailwind CSS v4 + `@tailwindcss/vite`；
 - `components.json`（style: `radix-nova`，base color: neutral，CSS variables）；
 - 全局样式入口：[src/styles/global.css](src/styles/global.css)（Tailwind import + shadcn 主题变量）；
-- 已安装组件：[Card](src/components/ui/card.tsx)、[Button](src/components/ui/button.tsx)。
+- 已安装组件：[Card](src/components/ui/card.tsx)、[Button](src/components/ui/button.tsx)、[DropdownMenu](src/components/ui/dropdown-menu.tsx)。
 
 约定：
 
@@ -75,6 +75,71 @@ pnpm build
 3. 业务组合组件放 `src/components/<类别>/`，例如 [GameCard](src/components/game/GameCard/GameCard.tsx)；页面只组合，不写组件细节。
 4. `cn` 合并工具：新版 shadcn 组件直接 `import { cn } from "cn"`；[src/shared/utils/cn.ts](src/shared/utils/cn.ts) 只是给旧风格组件留的别名兼容层（`@/shared/utils/cn`）。
 5. **样式策略变更**：基础 UI 一律用 Tailwind utility。CLAUDE.md 里「Less + CSS Modules」的说法现在只适用于后续特殊的游戏视觉（棋盘、纸面质感等），基础组件不要再写 `.module.less`。**CLAUDE.md 本身尚未同步这条，看到时以本节为准。**
+
+---
+
+## 颜色与主题规范（全站唯一来源）
+
+所有页面统一使用 [src/styles/global.css](src/styles/global.css) 中的设计令牌，**不在组件里写死颜色**。
+
+### 令牌
+
+```css
+:root,
+[data-theme='light'] {
+  --color-primary: #aa6048;
+  --color-secondary: #6f7a58;
+  --color-blue: #4f6f88;
+  --color-green: #5c7a52;
+  --color-danger: #b4453b;
+
+  --bg-primary: #f4f0e6;
+  --bg-secondary: #faf7f0;
+
+  --text-primary: #262a25;
+  --text-secondary: #756f64;
+  --text-inverse: #faf7f0;
+
+  --border-color: #c5bbaa;
+}
+
+[data-theme='dark'] {
+  --color-primary: #d08a6c;
+  --color-secondary: #9aa383;
+  --color-blue: #8aa9c2;
+  --color-green: #93ab88;
+  --color-danger: #e08a7f;
+
+  --bg-primary: #1b1a17;
+  --bg-secondary: #24221e;
+
+  --text-primary: #ece7dc;
+  --text-secondary: #a49b8c;
+  --text-inverse: #1b1a17;
+
+  --border-color: #3b3730;
+}
+```
+
+- 命名：`--color-*` 品牌色，`--bg-*` 背景，`--text-*` 前景文字，`--border-color` 描边；`--color-danger` 是 shadcn destructive 所需的危险态。
+- 色值取自 CLAUDE.md §8 的纸面 / 墨色 / 暖强调色；要换配色只改这一段，不要在组件里覆盖。
+- shadcn 的语义变量（`--background`、`--foreground`、`--primary`、`--muted` 等）全部映射到上述令牌，组件只写 `bg-background` / `text-foreground` / `border-border` 这类 Tailwind 类。
+- 主题切换只操作 `<html data-theme>`：
+
+  ```ts
+  document.documentElement.dataset.theme = 'dark'
+  document.documentElement.dataset.theme = 'light'
+  ```
+
+- React 侧统一通过 `useTheme()`（Provider 在 [app/providers/ThemeProvider.tsx](src/app/providers/ThemeProvider.tsx)，逻辑在 [presentation/theme](src/presentation/theme/)）读写；不要直接操作 DOM 或 localStorage。
+- 初始主题顺序：本地已保存偏好 → 系统 `prefers-color-scheme` → 浅色。
+
+### 顶部导航（所有页面共用）
+
+- [AppShell](src/app/shell/AppShell.tsx) 通过 `RouterProvider` 的 `renderLayout` 注入 [NavBar](src/components/layout/NavBar/NavBar.tsx)；路由层仍然不认识任何页面或游戏。
+- 左侧标题：首页「桌游实验室」、游戏页取注册表里的游戏名、设置页「设置」、404「页面不存在」；点击标题回首页。
+- 右侧：「更多」下拉菜单（设置入口）+ 太阳/月亮主题开关。图标来自 `lucide-react`（`Sun` / `Moon` / `Ellipsis` / `Settings`）。
+- 设置页路由为 `/settings`，目前提供浅色 / 深色选择；后续 LLM、玩家配置也放这里。
 
 ---
 

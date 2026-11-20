@@ -8,6 +8,7 @@ import type {
   ActiveRoute,
   NavigationPhase,
   RouteDefinition,
+  RouteLayoutRenderer,
   RouteLoadResult,
   RouteTarget,
   RouterContextValue,
@@ -16,6 +17,8 @@ import type {
 export interface RouterProviderProps {
   readonly routes: readonly RouteDefinition[]
   readonly fallbackRouteId: RouteId
+  /** 页面外壳（导航栏等）由 app 层注入；不传时直接渲染页面。 */
+  readonly renderLayout?: RouteLayoutRenderer
 }
 
 interface RouteLoadError {
@@ -34,7 +37,11 @@ function currentHref(): string {
  * 所以页面再快，spinner 也一定会被完整看到。
  * 遮罩、计时、加载状态都由这里编排，页面本身只有「被渲染」和「发导航」两件事。
  */
-export function RouterProvider({ routes, fallbackRouteId }: RouterProviderProps) {
+export function RouterProvider({
+  routes,
+  fallbackRouteId,
+  renderLayout,
+}: RouterProviderProps) {
   const fallbackRoute = useMemo(() => {
     const route = routes.find((item) => item.id === fallbackRouteId)
     if (route === undefined) {
@@ -226,13 +233,17 @@ export function RouterProvider({ routes, fallbackRouteId }: RouterProviderProps)
   )
 
   const ActivePage = active?.Page ?? null
+  const page =
+    ActivePage !== null && active !== null ? (
+      <ActivePage key={active.pathname} />
+    ) : null
 
   return (
     <RouterContext.Provider value={routerValue}>
       {loadError !== null ? (
         <RouteLoadFailure pathname={loadError.pathname} message={loadError.message} />
-      ) : ActivePage !== null && active !== null ? (
-        <ActivePage key={active.pathname} />
+      ) : page !== null && active !== null ? (
+        renderLayout === undefined ? page : renderLayout(page, active.match)
       ) : null}
 
       {phase !== 'idle' ? (
