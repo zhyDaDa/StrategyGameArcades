@@ -13,7 +13,7 @@ export const reversiActionSchema = z.object({
 })
 
 export const reversiStateSchema = z.object({
-  size: z.number().int().positive(),
+  size: z.literal(REVERSI_BOARD_SIZE),
   cells: z.array(z.enum(['empty', 'black', 'white'])).length(REVERSI_BOARD_SIZE * REVERSI_BOARD_SIZE),
   status: z.enum(['playing', 'completed']),
   currentPlayer: z.enum(['black', 'white']).nullable(),

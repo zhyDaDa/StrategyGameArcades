@@ -1,8 +1,10 @@
 import { DotsAndBoxesConfigView } from '@/games/dots-and-boxes/config/DotsAndBoxesConfigView'
 import { GomokuConfigView } from '@/games/gomoku/config/GomokuConfigView'
+import { ReversiConfigView } from '@/games/reversi/config/ReversiConfigView'
 import type { GameId } from '@/games/registry'
 import { DotsAndBoxesMatch } from './dots-and-boxes/DotsAndBoxesMatch'
 import { GomokuMatch } from './gomoku/GomokuMatch'
+import { ReversiMatch } from './reversi/ReversiMatch'
 import type { GameViewEntry } from './types'
 
 /**
@@ -15,6 +17,12 @@ export const GAME_VIEWS: Partial<Record<GameId, GameViewEntry>> = {
       <GomokuConfigView onStart={(payload) => onStart(payload)} />
     ),
     Match: GomokuMatch,
+  },
+  reversi: {
+    Config: ({ onStart }) => (
+      <ReversiConfigView onStart={(payload) => onStart(payload)} />
+    ),
+    Match: ReversiMatch,
   },
   'dots-and-boxes': {
     Config: ({ onStart }) => (

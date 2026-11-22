@@ -17,7 +17,7 @@ export class ReversiGame extends BaseGame<ReversiState, ReversiAction, ReversiOb
   constructor() {
     super({
       id: 'reversi',
-      rulesVersion: 1,
+      rulesVersion: 2,
       stateSchema: reversiStateSchema,
       actionSchema: reversiActionSchema,
     })

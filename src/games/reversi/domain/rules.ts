@@ -26,10 +26,10 @@ export function isReversiSide(value: string): value is ReversiSide {
 
 export function createInitialState(): ReversiState {
   const cells = Array<ReversiCellValue>(REVERSI_BOARD_SIZE * REVERSI_BOARD_SIZE).fill('empty')
-  cells[indexOf(3, 3)] = 'white'
-  cells[indexOf(4, 4)] = 'white'
-  cells[indexOf(3, 4)] = 'black'
-  cells[indexOf(4, 3)] = 'black'
+  cells[indexOf(REVERSI_BOARD_SIZE, 3, 3)] = 'white'
+  cells[indexOf(REVERSI_BOARD_SIZE, 4, 4)] = 'white'
+  cells[indexOf(REVERSI_BOARD_SIZE, 3, 4)] = 'black'
+  cells[indexOf(REVERSI_BOARD_SIZE, 4, 3)] = 'black'
   return {
     size: REVERSI_BOARD_SIZE,
     cells,
