@@ -1,18 +1,18 @@
-# 一键发布（本地构建 → HTTP 钩子 → 服务器原子切换）
+# 一键发布（本地构建 → HTTP 钩子 → 服务器替换 latest）
 
-不开放 22 端口，也不在发布时执行远程 SSH。本地脚本把 `dist` 打成 tar.gz，通过自定义端口的 HTTP 钩子上传；服务器上的小服务校验 token、解压、切换软链并清理旧版本。
+不开放 22 端口，也不在发布时执行远程 SSH。本地脚本把 `dist` 打成 tar.gz，通过自定义端口的 HTTP 钩子上传；服务器上的小服务校验 token、解压校验后直接替换 `latest` 目录，只保留这一份。
 
 ```text
 pnpm release
-  ├─ 1. pnpm build（注入统一构建时间 BUILD_TIME）
-  ├─ 2. 打包 dist -> table-arcades-<版本>.tar.gz
-  └─ 3. POST /deploy?version=<版本>（Bearer token）
+  ├─ 1. pnpm build（注入构建时间 BUILD_TIME）
+  ├─ 2. 打包 dist -> table-arcades-latest.tar.gz
+  └─ 3. POST /deploy（Bearer token）
                 ↓
      服务器 deploy-hook.py
-       ├─ 校验 token / 版本号 / 压缩包路径
-       ├─ 解压到 /opt/table-deploy/releases/<版本>
-       ├─ 原子切换 /opt/table-deploy/current 软链
-       └─ 保留最近 5 个版本
+       ├─ 校验 token / 压缩包路径与文件类型
+       ├─ 解压到 releases/.incoming-xxx 并校验 index.html
+       ├─ 原子替换 releases/latest（旧目录成功后删除）
+       └─ current 软链固定指向 releases/latest
 ```
 
 ## 本地命令
@@ -21,7 +21,7 @@ pnpm release
 - `pnpm review`：正式构建 + `vite preview`，用于本地验收构建产物
 - `pnpm release`：构建、打包并发布到服务器（`publish` 与 pnpm 内置命令重名，故用 release）
 
-构建时间会写入首页底栏“最后构建”，与服务器版本目录名（`YYYYMMDD-HHMMSS`）来自同一个时间点。
+构建时间会写入首页底栏“最后构建”，与本次发布使用的是同一个时间点。
 
 本地配置：把 `deploy/publish.env.example` 复制为项目根目录的 `.env.publish`（已被 gitignore）：
 
@@ -93,7 +93,7 @@ curl http://127.0.0.1:28443/health
 2. 网站 → 配置 → 配置文件，把 `root` 改为 `/opt/table-deploy/current`，并加入 SPA 回退与缓存规则，参考 `deploy/server/nginx-site.conf`。
 3. 保存并重载 Nginx。之后不要再在“网站目录”里改根目录，避免覆盖这份配置。
 
-`current` 是软链，首次发布前不存在，所以第一次访问会 404，执行一次 `pnpm release` 即可。
+`current` 软链由服务启动时自动创建，固定指向 `releases/latest`。首次发布前 `latest` 不存在，所以第一次访问会 404，执行一次 `pnpm release` 即可。
 
 ## 日常发布
 
@@ -104,29 +104,17 @@ pnpm release
 成功输出示例：
 
 ```text
-✔ 已发布 20261123-213015
-  服务器当前版本：20261123-213015
-  上一版本：20261123-104422
+✔ 已发布 latest（构建于 20261123-213015）
+  服务器目录：latest
 ```
 
-任一步失败都会明确报错并中止，不会静默回退：构建失败不上传；上传失败/服务器拒绝时打印 HTTP 状态与服务器返回的原因。
-
-## 回滚
-
-服务器保留最近 5 个版本：
-
-```bash
-ls -1 /opt/table-deploy/releases
-sudo ln -sfn /opt/table-deploy/releases/20261123-104422 /opt/table-deploy/current
-```
-
-`ln -sfn` 是原子替换，Nginx 无需重载。
+任一步失败都会明确报错并中止，不会静默回退：构建失败不上传；上传失败/服务器拒绝时打印 HTTP 状态与服务器返回的原因。服务器只保留一份 `latest`，重新发布即覆盖，不保留历史版本。
 
 ## 安全说明
 
 - 直接使用 HTTP 时 token 是明文传输，务必配合来源 IP 白名单；或者按 `nginx-site.conf` 末尾注释，把钩子改为 `DEPLOY_HOST=127.0.0.1`，由 Nginx 以 HTTPS 反代 `/__deploy/`，此时本地 `DEPLOY_URL=https://域名/__deploy`。
 - `.env.publish` 与 `/etc/table-deploy.env` 都不要提交到仓库。
-- 钩子只接受 `POST /deploy`，并校验 Bearer token、版本号格式、压缩包路径与文件类型（拒绝绝对路径、`..`、软链和特殊文件）。
+- 钩子只接受 `POST /deploy`，并校验 Bearer token、压缩包路径与文件类型（拒绝绝对路径、`..`、软链和特殊文件）。
 
 ## 排查
 

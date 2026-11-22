@@ -15,7 +15,8 @@ function pad(value) {
   return String(value).padStart(2, '0')
 }
 
-function createVersion(date) {
+// 仅用于终端展示；服务器始终只保留一个 latest 目录。
+function formatBuildStamp(date) {
   const day = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`
   const time = `${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
   return `${day}-${time}`
@@ -58,9 +59,9 @@ const hookUrl = new URL(endpoint.origin)
 hookUrl.pathname = `${endpoint.pathname.replace(/\/+$/, '')}/deploy`
 
 const buildTime = new Date()
-const version = createVersion(buildTime)
+const buildStamp = formatBuildStamp(buildTime)
 
-console.log(`\n▸ [1/3] 构建 ${version}`)
+console.log(`\n▸ [1/3] 构建 ${buildStamp}`)
 try {
   execSync('pnpm build', {
     stdio: 'inherit',
@@ -70,7 +71,7 @@ try {
   fail('构建失败，未上传任何文件。')
 }
 
-const archivePath = join(tmpdir(), `table-arcades-${version}.tar.gz`)
+const archivePath = join(tmpdir(), 'table-arcades-latest.tar.gz')
 
 try {
   console.log('▸ [2/3] 打包 dist')
@@ -119,9 +120,8 @@ try {
     fail(`部署钩子返回异常响应：${raw}`)
   }
 
-  console.log(`\n✔ 已发布 ${payload.version}`)
-  console.log(`  服务器当前版本：${payload.current ?? payload.version}`)
-  console.log(`  上一版本：${payload.previous ?? '无'}`)
+  console.log(`\n✔ 已发布 latest（构建于 ${buildStamp}）`)
+  console.log(`  服务器目录：${payload.current ?? 'latest'}`)
 } finally {
   await rm(archivePath, { force: true })
 }

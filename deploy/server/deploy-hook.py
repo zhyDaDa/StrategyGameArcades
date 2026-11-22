@@ -1,32 +1,34 @@
 #!/usr/bin/env python3
-"""TABLE 桌游实验室静态站点部署钩子（仅依赖 Python 3 标准库）。
+"""TABLE 静态站点部署钩子（仅依赖 Python 3 标准库）。
 
-流程：本地 pnpm release -> POST /deploy 上传 tar.gz -> 解压到 releases/<版本>
--> 原子切换 current 软链 -> 清理超出保留数量的旧版本。
+直接部署到 1Panel 站点目录：
+/opt/1panel/www/sites/strategy-game-arcade.zhydada.com/index
+每次先解压到同级临时目录，校验成功后原子替换 index 目录，只保留一份。
 """
 
 import hmac
 import json
 import os
-import re
 import shutil
 import sys
 import tarfile
 import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 TOKEN = os.environ.get("DEPLOY_TOKEN", "")
 HOST = os.environ.get("DEPLOY_HOST", "0.0.0.0")
 PORT = int(os.environ.get("DEPLOY_PORT", "28443"))
-ROOT = os.path.realpath(os.environ.get("DEPLOY_ROOT", "/opt/table-deploy"))
-KEEP_RELEASES = int(os.environ.get("DEPLOY_KEEP", "5"))
+SITE_DIR = os.path.realpath(
+    os.environ.get(
+        "DEPLOY_SITE_DIR",
+        "/opt/1panel/www/sites/strategy-game-arcade.zhydada.com/index",
+    )
+)
 MAX_ARCHIVE_BYTES = int(os.environ.get("DEPLOY_MAX_BYTES", str(200 * 1024 * 1024)))
 
-RELEASES_DIR = os.path.join(ROOT, "releases")
-CURRENT_LINK = os.path.join(ROOT, "current")
-VERSION_PATTERN = re.compile(r"^[0-9A-Za-z][0-9A-Za-z._-]{0,63}$")
+STAGE_PARENT = os.path.dirname(SITE_DIR)
 DEPLOY_LOCK = threading.Lock()
 
 
@@ -34,50 +36,17 @@ class DeployError(Exception):
     pass
 
 
-def read_current_version():
-    if not os.path.islink(CURRENT_LINK):
+def current_release():
+    if not os.path.isfile(os.path.join(SITE_DIR, "index.html")):
         return None
-    resolved = os.path.realpath(CURRENT_LINK)
-    if not os.path.isdir(resolved):
-        return None
-    return os.path.basename(resolved)
+    return "latest"
 
 
-def switch_current(target):
-    tmp_link = CURRENT_LINK + ".next"
-    if os.path.lexists(tmp_link):
-        os.remove(tmp_link)
-    os.symlink(target, tmp_link)
-    try:
-        os.replace(tmp_link, CURRENT_LINK)
-    except OSError as exc:
-        raise DeployError(
-            "无法切换 current 软链：%s（若 current 已存在且不是软链，请先删除它）" % exc
-        )
-
-
-def prune_releases():
-    keep_names = {read_current_version()}
-    entries = [
-        name
-        for name in os.listdir(RELEASES_DIR)
-        if VERSION_PATTERN.fullmatch(name)
-        and os.path.isdir(os.path.join(RELEASES_DIR, name))
-    ]
-    entries.sort(reverse=True)
-    keep_names.update(entries[:KEEP_RELEASES])
-    for name in entries:
-        if name not in keep_names:
-            shutil.rmtree(os.path.join(RELEASES_DIR, name), ignore_errors=True)
-
-
-def deploy(archive_path, version):
-    target = os.path.join(RELEASES_DIR, version)
+def deploy(archive_path):
     with DEPLOY_LOCK:
-        if os.path.exists(target):
-            raise DeployError("版本 %s 已存在，请重试" % version)
-
-        workdir = tempfile.mkdtemp(prefix=".extract-", dir=RELEASES_DIR)
+        staging = tempfile.mkdtemp(prefix=".deploy-", dir=STAGE_PARENT)
+        retired = SITE_DIR + ".retired"
+        staging_moved = False
         try:
             try:
                 with tarfile.open(archive_path, "r:gz") as archive:
@@ -92,32 +61,41 @@ def deploy(archive_path, version):
                                 "压缩包包含不支持的文件类型：%s" % member.name
                             )
                     try:
-                        archive.extractall(workdir, filter="data")
+                        archive.extractall(staging, filter="data")
                     except TypeError:
-                        archive.extractall(workdir)
+                        archive.extractall(staging)
             except (tarfile.TarError, OSError) as exc:
                 raise DeployError("解压失败：%s" % exc)
 
-            if not os.path.isfile(os.path.join(workdir, "index.html")):
+            if not os.path.isfile(os.path.join(staging, "index.html")):
                 raise DeployError("压缩包根目录缺少 index.html")
 
-            for dirpath, _dirnames, filenames in os.walk(workdir):
+            for dirpath, _dirnames, filenames in os.walk(staging):
                 os.chmod(dirpath, 0o755)
                 for name in filenames:
                     os.chmod(os.path.join(dirpath, name), 0o644)
 
-            os.rename(workdir, target)
+            shutil.rmtree(retired, ignore_errors=True)
+            had_site = os.path.exists(SITE_DIR)
+            if had_site:
+                os.rename(SITE_DIR, retired)
+            try:
+                os.rename(staging, SITE_DIR)
+            except OSError:
+                if had_site:
+                    os.rename(retired, SITE_DIR)
+                raise
+            staging_moved = True
+            if had_site:
+                shutil.rmtree(retired, ignore_errors=True)
+            return "latest"
         finally:
-            shutil.rmtree(workdir, ignore_errors=True)
-
-        previous = read_current_version()
-        switch_current(target)
-        prune_releases()
-        return previous
+            if not staging_moved:
+                shutil.rmtree(staging, ignore_errors=True)
 
 
 class DeployHandler(BaseHTTPRequestHandler):
-    server_version = "TableDeploy/1"
+    server_version = "TableDeploy/3"
     protocol_version = "HTTP/1.1"
 
     def send_json(self, status, payload, close=False):
@@ -141,21 +119,15 @@ class DeployHandler(BaseHTTPRequestHandler):
         if urlparse(self.path).path != "/health":
             self.send_json(404, {"ok": False, "error": "not found"})
             return
-        self.send_json(200, {"ok": True, "current": read_current_version()})
+        self.send_json(200, {"ok": True, "current": current_release()})
 
     def do_POST(self):
-        parsed = urlparse(self.path)
-        if parsed.path != "/deploy":
+        if urlparse(self.path).path != "/deploy":
             self.send_json(404, {"ok": False, "error": "not found"})
             return
 
         if not self.is_authorized():
             self.send_json(401, {"ok": False, "error": "unauthorized"}, close=True)
-            return
-
-        version = parse_qs(parsed.query).get("version", [""])[0]
-        if not VERSION_PATTERN.fullmatch(version):
-            self.send_json(400, {"ok": False, "error": "非法版本号"}, close=True)
             return
 
         content_length = self.headers.get("Content-Length")
@@ -172,7 +144,7 @@ class DeployHandler(BaseHTTPRequestHandler):
             return
 
         archive = tempfile.NamedTemporaryFile(
-            dir=RELEASES_DIR, prefix=".incoming-", suffix=".tar.gz", delete=False
+            dir=STAGE_PARENT, prefix=".upload-", suffix=".tar.gz", delete=False
         )
         archive_path = archive.name
         try:
@@ -185,20 +157,12 @@ class DeployHandler(BaseHTTPRequestHandler):
                 remaining -= len(chunk)
             archive.close()
 
-            previous = deploy(archive_path, version)
-            print("deployed %s (previous: %s)" % (version, previous), flush=True)
-            self.send_json(
-                200,
-                {
-                    "ok": True,
-                    "version": version,
-                    "current": version,
-                    "previous": previous,
-                },
-            )
+            current = deploy(archive_path)
+            print("deployed %s" % current, flush=True)
+            self.send_json(200, {"ok": True, "current": current})
         except DeployError as exc:
             self.send_json(400, {"ok": False, "error": str(exc)}, close=True)
-        except Exception as exc:  # noqa: BLE001 - 必须把失败原因返回给发布端
+        except Exception as exc:  # noqa: BLE001
             print("deploy failed: %s" % exc, file=sys.stderr, flush=True)
             self.send_json(500, {"ok": False, "error": "部署失败：%s" % exc}, close=True)
         finally:
@@ -216,9 +180,11 @@ def main():
     if not TOKEN:
         sys.exit("DEPLOY_TOKEN 未配置，拒绝启动")
 
-    os.makedirs(RELEASES_DIR, exist_ok=True)
+    if not os.path.isdir(STAGE_PARENT):
+        sys.exit("站点目录不存在：%s" % STAGE_PARENT)
+
     server = ThreadingHTTPServer((HOST, PORT), DeployHandler)
-    print("deploy hook listening on %s:%s (root=%s)" % (HOST, PORT, ROOT), flush=True)
+    print("deploy hook listening on %s:%s (site=%s)" % (HOST, PORT, SITE_DIR), flush=True)
     server.serve_forever()
 
 
