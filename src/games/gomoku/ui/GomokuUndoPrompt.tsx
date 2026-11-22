@@ -6,7 +6,7 @@ export interface GomokuUndoPromptProps {
   readonly onRespond: (accept: boolean) => void
 }
 
-/** 本地双人时的悔棋协商界面：只有应答方是真人时才出现。 */
+/** 悔棋协商界面：只有应答方是真人时才出现，与对局双方是真人还是 AI 无关。 */
 export function GomokuUndoPrompt({ vm, onRespond }: GomokuUndoPromptProps) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-primary/5 p-4">

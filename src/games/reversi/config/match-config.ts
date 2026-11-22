@@ -1,28 +1,36 @@
 import { z } from 'zod'
-import type { ReversiSide } from '../domain/types'
+import { refineSeatConfig, seatTypeSchema } from '@/presentation/match-setup/schema'
+import type { SeatMatchConfig } from '@/presentation/match-setup/types'
+import { ReversiSide } from '../domain/types'
 
-export const REVERSI_MATCH_MODES = ['human-vs-ai', 'local'] as const
-export type ReversiMatchMode = (typeof REVERSI_MATCH_MODES)[number]
-
-/** 一局黑白棋的配置；与局面快照一起持久化。 */
-export type ReversiMatchConfig =
-  | { readonly mode: 'human-vs-ai'; readonly humanSide: ReversiSide }
-  | { readonly mode: 'local' }
+/** 一局黑白棋的配置；席位可任意组合真人 / AI，与局面快照一起持久化。 */
+export type ReversiMatchConfig = SeatMatchConfig<ReversiSide>
 
 export const DEFAULT_REVERSI_MATCH_CONFIG: ReversiMatchConfig = {
-  mode: 'human-vs-ai',
-  humanSide: 'black',
+  seats: [
+    { id: 'black', type: 'human' },
+    { id: 'white', type: 'ai' },
+  ],
+  youSeat: 'black',
 }
 
-export const reversiMatchConfigSchema = z.discriminatedUnion('mode', [
-  z.object({
-    mode: z.literal('human-vs-ai'),
-    humanSide: z.enum(['black', 'white']),
-  }),
-  z.object({
-    mode: z.literal('local'),
-  }),
-])
+const sideSchema = z.enum(ReversiSide)
+
+export const reversiMatchConfigSchema = z
+  .object({
+    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema })).length(2),
+    youSeat: sideSchema.nullable(),
+  })
+  .superRefine((config, ctx) => {
+    if (config.seats[0]?.id !== 'black' || config.seats[1]?.id !== 'white') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['seats'],
+        message: '席位必须按黑、白顺序排列',
+      })
+    }
+    refineSeatConfig(config, ctx)
+  })
 
 export const REVERSI_RULES_SUMMARY =
   '8×8 棋盘，黑先白后；落子必须夹住至少一枚对方棋子并全部翻转。当一方无子可下时自动跳过；双方都无子可下时，棋子多者胜。'

@@ -16,6 +16,7 @@ const HIDDEN_Y = '95%'
 /**
  * 缩略图外壳：倾斜方块，滚动进入视口时从下方带弹性地抬起，
  * 并停在部分被裁切的位置；整张卡片悬停时再弹到完全露出。
+ * 离开视口后复位，再次进入时会重新弹起，保留「翻到这里又出现」的节奏。
  *
  * 这里局部覆盖 reducedMotion="never"：这套抬起是卡片唯一的识别动效，
  * 系统关闭动画时若被静默降级，卡片会完全失去预期表现。
@@ -23,7 +24,7 @@ const HIDDEN_Y = '95%'
  */
 export function GameThumbnail({ hovered, children }: GameThumbnailProps) {
   const frameRef = useRef<HTMLDivElement>(null)
-  const inView = useInView(frameRef, { once: true, amount: 0.6 })
+  const inView = useInView(frameRef, { once: false, amount: 0.6 })
 
   return (
     <MotionConfig reducedMotion="never">

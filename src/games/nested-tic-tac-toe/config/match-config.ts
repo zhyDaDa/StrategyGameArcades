@@ -1,21 +1,11 @@
 import { z } from 'zod'
+import { refineSeatConfig, seatTypeSchema } from '@/presentation/match-setup/schema'
+import type { SeatMatchConfig } from '@/presentation/match-setup/types'
 import { NestedTicTacToeGame } from '../domain/NestedTicTacToeGame'
-import type { NestedTicTacToeSide } from '../domain/types'
+import { NESTED_SIDES, type NestedTicTacToeSide } from '../domain/types'
 
-export const NestedSeatType = ['human', 'ai'] as const
-export type NestedSeatType = (typeof NestedSeatType)[number]
-
-export interface NestedSeatConfig {
-  readonly id: NestedTicTacToeSide
-  readonly type: NestedSeatType
-}
-
-/** 一局九宫井字棋的配置；红方固定先手，席位顺序固定为红、蓝。 */
-export interface NestedTicTacToeMatchConfig {
-  readonly seats: readonly NestedSeatConfig[]
-  /** 本机操作者所在的席位，必须是 human 席位。 */
-  readonly youSeat: NestedTicTacToeSide
-}
+/** 一局九宫井字棋的配置；席位可任意组合真人 / AI，红方固定先手。 */
+export type NestedTicTacToeMatchConfig = SeatMatchConfig<NestedTicTacToeSide>
 
 export const DEFAULT_NESTED_MATCH_CONFIG: NestedTicTacToeMatchConfig = {
   seats: [
@@ -25,17 +15,12 @@ export const DEFAULT_NESTED_MATCH_CONFIG: NestedTicTacToeMatchConfig = {
   youSeat: 'red',
 }
 
+const sideSchema = z.enum(NESTED_SIDES)
+
 export const nestedTicTacToeMatchConfigSchema = z
   .object({
-    seats: z
-      .array(
-        z.object({
-          id: z.enum(['red', 'blue']),
-          type: z.enum(['human', 'ai']),
-        }),
-      )
-      .length(2),
-    youSeat: z.enum(['red', 'blue']),
+    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema })).length(2),
+    youSeat: sideSchema.nullable(),
   })
   .superRefine((config, ctx) => {
     if (config.seats[0]?.id !== 'red' || config.seats[1]?.id !== 'blue') {
@@ -45,21 +30,7 @@ export const nestedTicTacToeMatchConfigSchema = z
         message: '席位必须按红、蓝顺序排列',
       })
     }
-    if (!config.seats.some((seat) => seat.type === 'human')) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['seats'],
-        message: '至少需要一位本机玩家',
-      })
-    }
-    const you = config.seats.find((seat) => seat.id === config.youSeat)
-    if (you === undefined || you.type !== 'human') {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['youSeat'],
-        message: '本机操作者必须坐在 human 席位',
-      })
-    }
+    refineSeatConfig(config, ctx)
   })
 
 export function createNestedTicTacToeGame(): NestedTicTacToeGame {

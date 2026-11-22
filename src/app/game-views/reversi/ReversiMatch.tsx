@@ -18,7 +18,7 @@ import {
   type ReversiSide,
   type ReversiState,
 } from '@/games/reversi'
-import { isReversiSide, opponentOf } from '@/games/reversi/domain/rules'
+import { isReversiSide } from '@/games/reversi/domain/rules'
 import { ReversiView } from '@/games/reversi/ui/ReversiView'
 import {
   selectPassedSide,
@@ -234,34 +234,24 @@ function createBundle(): ReversiMatchBundle {
 }
 
 function createSeats(config: ReversiMatchConfig): ReversiSeats {
-  if (config.mode === 'local') {
-    const black = new HumanController<ReversiObservation, ReversiAction>('black')
-    const white = new HumanController<ReversiObservation, ReversiAction>('white')
-    return {
-      players: new Map<PlayerId, MatchPlayer<ReversiObservation, ReversiAction>>([
-        ['black', { controller: black, role: 'human', undoPolicy: 'ask' }],
-        ['white', { controller: white, role: 'human', undoPolicy: 'ask' }],
-      ]),
-      humans: new Map<ReversiSide, ReversiHuman>([
-        ['black', black],
-        ['white', white],
-      ]),
-      humanSides: new Set<ReversiSide>(['black', 'white']),
+  const players = new Map<PlayerId, MatchPlayer<ReversiObservation, ReversiAction>>()
+  const humans = new Map<ReversiSide, ReversiHuman>()
+
+  for (const seat of config.seats) {
+    if (seat.type === 'human') {
+      const human = new HumanController<ReversiObservation, ReversiAction>(seat.id)
+      humans.set(seat.id, human)
+      players.set(seat.id, { controller: human, role: 'human', undoPolicy: 'ask' })
+    } else {
+      const ai = new ReversiHeuristicController(seat.id)
+      players.set(seat.id, { controller: ai, role: 'bot', undoPolicy: 'accept' })
     }
   }
 
-  const humanSide = config.humanSide
-  const aiSide = opponentOf(humanSide)
-  const human = new HumanController<ReversiObservation, ReversiAction>(humanSide)
-  const ai = new ReversiHeuristicController(aiSide)
-
   return {
-    players: new Map<PlayerId, MatchPlayer<ReversiObservation, ReversiAction>>([
-      [humanSide, { controller: human, role: 'human', undoPolicy: 'ask' }],
-      [aiSide, { controller: ai, role: 'bot', undoPolicy: 'accept' }],
-    ]),
-    humans: new Map<ReversiSide, ReversiHuman>([[humanSide, human]]),
-    humanSides: new Set<ReversiSide>([humanSide]),
+    players,
+    humans,
+    humanSides: new Set<ReversiSide>(humans.keys()),
   }
 }
 

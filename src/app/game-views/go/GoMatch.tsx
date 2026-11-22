@@ -19,7 +19,7 @@ import {
   type GoSide,
   type GoState,
 } from '@/games/go'
-import { isGoSide, opponentOf } from '@/games/go/domain/rules'
+import { isGoSide } from '@/games/go/domain/rules'
 import { GoView } from '@/games/go/ui/GoView'
 import {
   selectPassedSide,
@@ -240,34 +240,24 @@ function createBundle(): GoMatchBundle {
 }
 
 function createSeats(config: GoMatchConfig): GoSeats {
-  if (config.mode === 'local') {
-    const black = new HumanController<GoObservation, GoAction>('black')
-    const white = new HumanController<GoObservation, GoAction>('white')
-    return {
-      players: new Map<PlayerId, MatchPlayer<GoObservation, GoAction>>([
-        ['black', { controller: black, role: 'human', undoPolicy: 'ask' }],
-        ['white', { controller: white, role: 'human', undoPolicy: 'ask' }],
-      ]),
-      humans: new Map<GoSide, GoHuman>([
-        ['black', black],
-        ['white', white],
-      ]),
-      humanSides: new Set<GoSide>(['black', 'white']),
+  const players = new Map<PlayerId, MatchPlayer<GoObservation, GoAction>>()
+  const humans = new Map<GoSide, GoHuman>()
+
+  for (const seat of config.seats) {
+    if (seat.type === 'human') {
+      const human = new HumanController<GoObservation, GoAction>(seat.id)
+      humans.set(seat.id, human)
+      players.set(seat.id, { controller: human, role: 'human', undoPolicy: 'ask' })
+    } else {
+      const ai = new GoHeuristicController(seat.id)
+      players.set(seat.id, { controller: ai, role: 'bot', undoPolicy: 'accept' })
     }
   }
 
-  const humanSide = config.humanSide
-  const aiSide = opponentOf(humanSide)
-  const human = new HumanController<GoObservation, GoAction>(humanSide)
-  const ai = new GoHeuristicController(aiSide)
-
   return {
-    players: new Map<PlayerId, MatchPlayer<GoObservation, GoAction>>([
-      [humanSide, { controller: human, role: 'human', undoPolicy: 'ask' }],
-      [aiSide, { controller: ai, role: 'bot', undoPolicy: 'accept' }],
-    ]),
-    humans: new Map<GoSide, GoHuman>([[humanSide, human]]),
-    humanSides: new Set<GoSide>([humanSide]),
+    players,
+    humans,
+    humanSides: new Set<GoSide>(humans.keys()),
   }
 }
 

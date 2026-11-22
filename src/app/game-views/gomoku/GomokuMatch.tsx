@@ -17,7 +17,7 @@ import {
   type GomokuSide,
   type GomokuState,
 } from '@/games/gomoku'
-import { isGomokuSide, opponentOf } from '@/games/gomoku/domain/rules'
+import { isGomokuSide } from '@/games/gomoku/domain/rules'
 import { GomokuView } from '@/games/gomoku/ui/GomokuView'
 import {
   toGomokuPendingUndoViewModel,
@@ -231,34 +231,24 @@ function createBundle(): GomokuMatchBundle {
 }
 
 function createSeats(config: GomokuMatchConfig): GomokuSeats {
-  if (config.mode === 'local') {
-    const black = new HumanController<GomokuObservation, GomokuAction>('black')
-    const white = new HumanController<GomokuObservation, GomokuAction>('white')
-    return {
-      players: new Map<PlayerId, MatchPlayer<GomokuObservation, GomokuAction>>([
-        ['black', { controller: black, role: 'human', undoPolicy: 'ask' }],
-        ['white', { controller: white, role: 'human', undoPolicy: 'ask' }],
-      ]),
-      humans: new Map<GomokuSide, GomokuHuman>([
-        ['black', black],
-        ['white', white],
-      ]),
-      humanSides: new Set<GomokuSide>(['black', 'white']),
+  const players = new Map<PlayerId, MatchPlayer<GomokuObservation, GomokuAction>>()
+  const humans = new Map<GomokuSide, GomokuHuman>()
+
+  for (const seat of config.seats) {
+    if (seat.type === 'human') {
+      const human = new HumanController<GomokuObservation, GomokuAction>(seat.id)
+      humans.set(seat.id, human)
+      players.set(seat.id, { controller: human, role: 'human', undoPolicy: 'ask' })
+    } else {
+      const ai = new GomokuHeuristicController(seat.id)
+      players.set(seat.id, { controller: ai, role: 'bot', undoPolicy: 'accept' })
     }
   }
 
-  const humanSide = config.humanSide
-  const aiSide = opponentOf(humanSide)
-  const human = new HumanController<GomokuObservation, GomokuAction>(humanSide)
-  const ai = new GomokuHeuristicController(aiSide)
-
   return {
-    players: new Map<PlayerId, MatchPlayer<GomokuObservation, GomokuAction>>([
-      [humanSide, { controller: human, role: 'human', undoPolicy: 'ask' }],
-      [aiSide, { controller: ai, role: 'bot', undoPolicy: 'accept' }],
-    ]),
-    humans: new Map<GomokuSide, GomokuHuman>([[humanSide, human]]),
-    humanSides: new Set<GomokuSide>([humanSide]),
+    players,
+    humans,
+    humanSides: new Set<GomokuSide>(humans.keys()),
   }
 }
 

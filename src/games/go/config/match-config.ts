@@ -1,28 +1,36 @@
 import { z } from 'zod'
-import type { GoSide } from '../domain/types'
+import { refineSeatConfig, seatTypeSchema } from '@/presentation/match-setup/schema'
+import type { SeatMatchConfig } from '@/presentation/match-setup/types'
+import { GoSide } from '../domain/types'
 
-export const GO_MATCH_MODES = ['human-vs-ai', 'local'] as const
-export type GoMatchMode = (typeof GO_MATCH_MODES)[number]
-
-/** 一局围棋的配置；与局面快照一起持久化。 */
-export type GoMatchConfig =
-  | { readonly mode: 'human-vs-ai'; readonly humanSide: GoSide }
-  | { readonly mode: 'local' }
+/** 一局围棋的配置；席位可任意组合真人 / AI，与局面快照一起持久化。 */
+export type GoMatchConfig = SeatMatchConfig<GoSide>
 
 export const DEFAULT_GO_MATCH_CONFIG: GoMatchConfig = {
-  mode: 'human-vs-ai',
-  humanSide: 'black',
+  seats: [
+    { id: 'black', type: 'human' },
+    { id: 'white', type: 'ai' },
+  ],
+  youSeat: 'black',
 }
 
-export const goMatchConfigSchema = z.discriminatedUnion('mode', [
-  z.object({
-    mode: z.literal('human-vs-ai'),
-    humanSide: z.enum(['black', 'white']),
-  }),
-  z.object({
-    mode: z.literal('local'),
-  }),
-])
+const sideSchema = z.enum(GoSide)
+
+export const goMatchConfigSchema = z
+  .object({
+    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema })).length(2),
+    youSeat: sideSchema.nullable(),
+  })
+  .superRefine((config, ctx) => {
+    if (config.seats[0]?.id !== 'black' || config.seats[1]?.id !== 'white') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['seats'],
+        message: '席位必须按黑、白顺序排列',
+      })
+    }
+    refineSeatConfig(config, ctx)
+  })
 
 export const GO_RULES_SUMMARY =
   '19×19 棋盘，黑先白后。无气的对方棋子会被整块提掉；禁止自杀，也不能立即回提形成劫争。双方连续停一手即结束，按中国规则数子（棋子 + 围空），白贴 7.5 目，多者胜。'

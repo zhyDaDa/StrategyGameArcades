@@ -1,5 +1,5 @@
 import type { PendingUndo } from '@/core/session/GameSession'
-import type { DotsSeatConfig } from '../config/match-config'
+import type { SeatAssignment } from '@/presentation/match-setup/types'
 import { isDotsAndBoxesSeat } from '../domain/rules'
 import { selectScores, selectStandings, type DotsBoardViewModel } from '../domain/selectors'
 import type {
@@ -59,8 +59,8 @@ export interface DotsAndBoxesViewProps {
 }
 
 export function buildSeatNames(
-  seats: readonly DotsSeatConfig[],
-  youSeat: DotsAndBoxesSeat,
+  seats: readonly SeatAssignment<DotsAndBoxesSeat>[],
+  youSeat: DotsAndBoxesSeat | null,
 ): Record<DotsAndBoxesSeat, string> {
   const names: Record<DotsAndBoxesSeat, string> = {
     red: DOTS_SEAT_META.red.label,
