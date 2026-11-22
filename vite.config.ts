@@ -11,4 +11,8 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  // 发布脚本会传入同一次构建的时间，保证底栏时间与服务器版本号一致。
+  define: {
+    __BUILD_TIME__: JSON.stringify(process.env.BUILD_TIME ?? new Date().toISOString()),
+  },
 })
