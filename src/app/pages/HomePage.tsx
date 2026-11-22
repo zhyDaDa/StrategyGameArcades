@@ -6,6 +6,7 @@ import { GoThumbnail } from '@/games/go/ui/GoThumbnail'
 import { GomokuThumbnail } from '@/games/gomoku/ui/GomokuThumbnail'
 import { NestedTicTacToeThumbnail } from '@/games/nested-tic-tac-toe/ui/NestedTicTacToeThumbnail'
 import { ReversiThumbnail } from '@/games/reversi/ui/ReversiThumbnail'
+import { XiangqiThumbnail } from '@/games/xiangqi/ui/XiangqiThumbnail'
 import { GAMES, type GameId } from '@/games/registry'
 import { Link } from '@/routers/Link'
 
@@ -14,6 +15,7 @@ const GAME_ART: Record<GameId, () => ReactNode> = {
   gomoku: GomokuThumbnail,
   go: GoThumbnail,
   reversi: ReversiThumbnail,
+  xiangqi: XiangqiThumbnail,
   'dots-and-boxes': DotsAndBoxesThumbnail,
   'nested-tic-tac-toe': NestedTicTacToeThumbnail,
 }

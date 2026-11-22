@@ -3,12 +3,14 @@ import { GoConfigView } from '@/games/go/config/GoConfigView'
 import { GomokuConfigView } from '@/games/gomoku/config/GomokuConfigView'
 import { NestedTicTacToeConfigView } from '@/games/nested-tic-tac-toe/config/NestedTicTacToeConfigView'
 import { ReversiConfigView } from '@/games/reversi/config/ReversiConfigView'
+import { XiangqiConfigView } from '@/games/xiangqi/config/XiangqiConfigView'
 import type { GameId } from '@/games/registry'
 import { DotsAndBoxesMatch } from './dots-and-boxes/DotsAndBoxesMatch'
 import { GoMatch } from './go/GoMatch'
 import { GomokuMatch } from './gomoku/GomokuMatch'
 import { NestedTicTacToeMatch } from './nested-tic-tac-toe/NestedTicTacToeMatch'
 import { ReversiMatch } from './reversi/ReversiMatch'
+import { XiangqiMatch } from './xiangqi/XiangqiMatch'
 import type { GameViewEntry } from './types'
 
 /**
@@ -33,6 +35,12 @@ export const GAME_VIEWS: Partial<Record<GameId, GameViewEntry>> = {
       <ReversiConfigView onStart={(payload) => onStart(payload)} />
     ),
     Match: ReversiMatch,
+  },
+  xiangqi: {
+    Config: ({ onStart }) => (
+      <XiangqiConfigView onStart={(payload) => onStart(payload)} />
+    ),
+    Match: XiangqiMatch,
   },
   'dots-and-boxes': {
     Config: ({ onStart }) => (
