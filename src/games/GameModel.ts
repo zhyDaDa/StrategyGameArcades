@@ -9,17 +9,12 @@ export interface GameRaw<Id extends string = string> {
   readonly description: string
   /** 进入该游戏的入口路径（配置页），例如 `/config/gomoku`。 */
   readonly path: string
-  /** 封面图 URL；尚未提供时为 null，由展示层渲染占位。 */
-  readonly cover: string | null
 }
 
-/** GameModel 提供给卡片组件的展示数据。 */
+/** GameModel 提供给卡片组件的纯文本展示数据。 */
 export interface GameCardData {
   readonly name: string
   readonly description: string
-  readonly path: string
-  readonly cover: string | null
-  readonly coverFallback: string
 }
 
 export class GameModel<Id extends string = string> {
@@ -27,31 +22,22 @@ export class GameModel<Id extends string = string> {
   readonly name: string
   readonly description: string
   readonly path: string
-  readonly cover: string | null
 
   constructor(raw: GameRaw<Id>) {
     this.id = raw.id
     this.name = raw.name
     this.description = raw.description
     this.path = raw.path
-    this.cover = raw.cover
   }
 
   static fromRaw<Id extends string>(raw: GameRaw<Id>): GameModel<Id> {
     return new GameModel(raw)
   }
 
-  get hasCover(): boolean {
-    return this.cover !== null
-  }
-
   toCardData(): GameCardData {
     return {
       name: this.name,
       description: this.description,
-      path: this.path,
-      cover: this.cover,
-      coverFallback: this.name.trim().slice(0, 1) || '?',
     }
   }
 }

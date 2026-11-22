@@ -15,5 +15,4 @@ export const gomokuGameModel = new GameModel({
   name: '五子棋',
   description: '落子成五，先连成一线者胜。',
   path: '/config/gomoku',
-  cover: null,
 })

@@ -13,4 +13,20 @@ export const motionTokens = {
     out: [0.22, 1, 0.36, 1] satisfies CubicBezier,
     back: [0.34, 1.56, 0.64, 1] satisfies CubicBezier,
   },
+  spring: {
+    /** 卡片缩略图从缩略区里弹起：略低的阻尼让它在终点附近回弹一次。 */
+    pop: {
+      type: 'spring',
+      stiffness: 210,
+      damping: 15,
+      mass: 0.9,
+    } satisfies SpringTransition,
+  },
+}
+
+interface SpringTransition {
+  readonly type: 'spring'
+  readonly stiffness: number
+  readonly damping: number
+  readonly mass: number
 }

@@ -20,5 +20,4 @@ export const dotsAndBoxesGameModel = new GameModel({
   name: '方格大战',
   description: '连点围格，得分续手，占满棋盘比分数。',
   path: '/config/dots-and-boxes',
-  cover: null,
 })

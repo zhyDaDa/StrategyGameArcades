@@ -10,21 +10,22 @@ export interface SeatSymbolProps {
 export function SeatSymbol({ seat, className }: SeatSymbolProps) {
   const { color, symbol } = DOTS_SEAT_META[seat]
   return (
-    <svg
-      viewBox="0 0 100 100"
-      aria-hidden="true"
-      className={className}
-      style={{ color }}
-    >
-      {renderShape(symbol)}
+    <svg viewBox="0 0 100 100" aria-hidden="true" className={className}>
+      <SeatSymbolShape symbol={symbol} stroke={color} />
     </svg>
   )
 }
 
-function renderShape(symbol: DotsSeatSymbol) {
+export interface SeatSymbolShapeProps {
+  readonly symbol: DotsSeatSymbol
+  readonly stroke: string
+}
+
+/** 符号几何体（0..100 坐标系），可在外层 SVG 中缩放复用。 */
+export function SeatSymbolShape({ symbol, stroke }: SeatSymbolShapeProps) {
   const strokeProps = {
     fill: 'none',
-    stroke: 'currentColor',
+    stroke,
     strokeWidth: 11,
     strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const,

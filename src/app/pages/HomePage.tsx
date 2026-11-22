@@ -1,6 +1,18 @@
+import type { ReactNode } from 'react'
 import { GameCard } from '@/components/game/GameCard/GameCard'
-import { GAMES } from '@/games/registry'
+import { GameThumbnail } from '@/components/game/GameThumbnail/GameThumbnail'
+import { DotsAndBoxesThumbnail } from '@/games/dots-and-boxes/ui/DotsAndBoxesThumbnail'
+import { GomokuThumbnail } from '@/games/gomoku/ui/GomokuThumbnail'
+import { ReversiThumbnail } from '@/games/reversi/ui/ReversiThumbnail'
+import { GAMES, type GameId } from '@/games/registry'
 import { Link } from '@/routers/Link'
+
+/** 首页每张卡片的静态局面图；游戏专属画面留在各自 games/<id>/ui。 */
+const GAME_ART: Record<GameId, () => ReactNode> = {
+  gomoku: GomokuThumbnail,
+  reversi: ReversiThumbnail,
+  'dots-and-boxes': DotsAndBoxesThumbnail,
+}
 
 const cardLinkClassName = [
   'block rounded-xl outline-none transition-transform',
@@ -21,11 +33,21 @@ export function HomePage() {
         </p>
       </header>
       <section className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        {GAMES.map((game) => (
-          <Link key={game.id} to={game.path} className={cardLinkClassName}>
-            <GameCard {...game.toCardData()} />
-          </Link>
-        ))}
+        {GAMES.map((game) => {
+          const Art = GAME_ART[game.id]
+          return (
+            <Link key={game.id} to={game.path} className={cardLinkClassName}>
+              <GameCard
+                {...game.toCardData()}
+                thumbnail={
+                  <GameThumbnail>
+                    <Art />
+                  </GameThumbnail>
+                }
+              />
+            </Link>
+          )
+        })}
       </section>
     </main>
   )
