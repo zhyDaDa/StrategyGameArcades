@@ -39,11 +39,11 @@ export function HomePage() {
             <Link key={game.id} to={game.path} className={cardLinkClassName}>
               <GameCard
                 {...game.toCardData()}
-                thumbnail={
-                  <GameThumbnail>
+                thumbnail={({ hovered }) => (
+                  <GameThumbnail hovered={hovered}>
                     <Art />
                   </GameThumbnail>
-                }
+                )}
               />
             </Link>
           )

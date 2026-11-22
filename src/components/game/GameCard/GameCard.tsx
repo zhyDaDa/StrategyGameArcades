@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Card,
   CardDescription,
@@ -6,11 +6,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-/** 首页卡片：只负责排版，缩略图由 games/<id>/ui 提供。 */
+export interface GameCardThumbnailState {
+  readonly hovered: boolean;
+}
+
+/** 首页卡片：只负责排版与悬停状态，缩略图由 games/<id>/ui 提供。 */
 export interface GameCardProps {
   readonly name: string;
   readonly description: string;
-  readonly thumbnail: ReactNode;
+  readonly thumbnail: (state: GameCardThumbnailState) => ReactNode;
 }
 
 export function GameCard({
@@ -18,8 +22,14 @@ export function GameCard({
   description,
   thumbnail,
 }: GameCardProps) {
+  const [hovered, setHovered] = useState(false);
+
   return (
-    <Card className="gap-0 py-0">
+    <Card
+      className="gap-0 py-0"
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+    >
       <div
         className={[
           "relative flex aspect-4/3 w-full items-center justify-center overflow-hidden border-b bg-muted",
@@ -28,7 +38,7 @@ export function GameCard({
           "[background-size:22px_22px]",
         ].join(" ")}
       >
-        {thumbnail}
+        {thumbnail({ hovered })}
       </div>
       <CardHeader className="py-4">
         <CardTitle>{name}</CardTitle>
