@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { GameCard } from '@/components/game/GameCard/GameCard'
 import { GameThumbnail } from '@/components/game/GameThumbnail/GameThumbnail'
 import { DotsAndBoxesThumbnail } from '@/games/dots-and-boxes/ui/DotsAndBoxesThumbnail'
+import { GoThumbnail } from '@/games/go/ui/GoThumbnail'
 import { GomokuThumbnail } from '@/games/gomoku/ui/GomokuThumbnail'
 import { NestedTicTacToeThumbnail } from '@/games/nested-tic-tac-toe/ui/NestedTicTacToeThumbnail'
 import { ReversiThumbnail } from '@/games/reversi/ui/ReversiThumbnail'
@@ -11,6 +12,7 @@ import { Link } from '@/routers/Link'
 /** 首页每张卡片的静态局面图；游戏专属画面留在各自 games/<id>/ui。 */
 const GAME_ART: Record<GameId, () => ReactNode> = {
   gomoku: GomokuThumbnail,
+  go: GoThumbnail,
   reversi: ReversiThumbnail,
   'dots-and-boxes': DotsAndBoxesThumbnail,
   'nested-tic-tac-toe': NestedTicTacToeThumbnail,
