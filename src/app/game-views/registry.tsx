@@ -1,9 +1,11 @@
 import { DotsAndBoxesConfigView } from '@/games/dots-and-boxes/config/DotsAndBoxesConfigView'
 import { GomokuConfigView } from '@/games/gomoku/config/GomokuConfigView'
+import { NestedTicTacToeConfigView } from '@/games/nested-tic-tac-toe/config/NestedTicTacToeConfigView'
 import { ReversiConfigView } from '@/games/reversi/config/ReversiConfigView'
 import type { GameId } from '@/games/registry'
 import { DotsAndBoxesMatch } from './dots-and-boxes/DotsAndBoxesMatch'
 import { GomokuMatch } from './gomoku/GomokuMatch'
+import { NestedTicTacToeMatch } from './nested-tic-tac-toe/NestedTicTacToeMatch'
 import { ReversiMatch } from './reversi/ReversiMatch'
 import type { GameViewEntry } from './types'
 
@@ -29,5 +31,11 @@ export const GAME_VIEWS: Partial<Record<GameId, GameViewEntry>> = {
       <DotsAndBoxesConfigView onStart={(payload) => onStart(payload)} />
     ),
     Match: DotsAndBoxesMatch,
+  },
+  'nested-tic-tac-toe': {
+    Config: ({ onStart }) => (
+      <NestedTicTacToeConfigView onStart={(payload) => onStart(payload)} />
+    ),
+    Match: NestedTicTacToeMatch,
   },
 }

@@ -3,6 +3,7 @@ import { GameCard } from '@/components/game/GameCard/GameCard'
 import { GameThumbnail } from '@/components/game/GameThumbnail/GameThumbnail'
 import { DotsAndBoxesThumbnail } from '@/games/dots-and-boxes/ui/DotsAndBoxesThumbnail'
 import { GomokuThumbnail } from '@/games/gomoku/ui/GomokuThumbnail'
+import { NestedTicTacToeThumbnail } from '@/games/nested-tic-tac-toe/ui/NestedTicTacToeThumbnail'
 import { ReversiThumbnail } from '@/games/reversi/ui/ReversiThumbnail'
 import { GAMES, type GameId } from '@/games/registry'
 import { Link } from '@/routers/Link'
@@ -12,6 +13,7 @@ const GAME_ART: Record<GameId, () => ReactNode> = {
   gomoku: GomokuThumbnail,
   reversi: ReversiThumbnail,
   'dots-and-boxes': DotsAndBoxesThumbnail,
+  'nested-tic-tac-toe': NestedTicTacToeThumbnail,
 }
 
 const cardLinkClassName = [
