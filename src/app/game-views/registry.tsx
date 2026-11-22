@@ -1,3 +1,4 @@
+import { ChessConfigView } from '@/games/chess/config/ChessConfigView'
 import { DotsAndBoxesConfigView } from '@/games/dots-and-boxes/config/DotsAndBoxesConfigView'
 import { GoConfigView } from '@/games/go/config/GoConfigView'
 import { GomokuConfigView } from '@/games/gomoku/config/GomokuConfigView'
@@ -5,6 +6,7 @@ import { NestedTicTacToeConfigView } from '@/games/nested-tic-tac-toe/config/Nes
 import { ReversiConfigView } from '@/games/reversi/config/ReversiConfigView'
 import { XiangqiConfigView } from '@/games/xiangqi/config/XiangqiConfigView'
 import type { GameId } from '@/games/registry'
+import { ChessMatch } from './chess/ChessMatch'
 import { DotsAndBoxesMatch } from './dots-and-boxes/DotsAndBoxesMatch'
 import { GoMatch } from './go/GoMatch'
 import { GomokuMatch } from './gomoku/GomokuMatch'
@@ -41,6 +43,12 @@ export const GAME_VIEWS: Partial<Record<GameId, GameViewEntry>> = {
       <XiangqiConfigView onStart={(payload) => onStart(payload)} />
     ),
     Match: XiangqiMatch,
+  },
+  chess: {
+    Config: ({ onStart }) => (
+      <ChessConfigView onStart={(payload) => onStart(payload)} />
+    ),
+    Match: ChessMatch,
   },
   'dots-and-boxes': {
     Config: ({ onStart }) => (

@@ -1,3 +1,4 @@
+import { chessGameModel } from '@/games/chess'
 import { dotsAndBoxesGameModel } from '@/games/dots-and-boxes'
 import { goGameModel } from '@/games/go'
 import { gomokuGameModel } from '@/games/gomoku'
@@ -11,6 +12,7 @@ export const GAMES = [
   goGameModel,
   reversiGameModel,
   xiangqiGameModel,
+  chessGameModel,
   dotsAndBoxesGameModel,
   nestedTicTacToeGameModel,
 ] as const

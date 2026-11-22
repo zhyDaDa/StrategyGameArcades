@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { GameCard } from '@/components/game/GameCard/GameCard'
 import { GameThumbnail } from '@/components/game/GameThumbnail/GameThumbnail'
+import { ChessThumbnail } from '@/games/chess/ui/ChessThumbnail'
 import { DotsAndBoxesThumbnail } from '@/games/dots-and-boxes/ui/DotsAndBoxesThumbnail'
 import { GoThumbnail } from '@/games/go/ui/GoThumbnail'
 import { GomokuThumbnail } from '@/games/gomoku/ui/GomokuThumbnail'
@@ -16,6 +17,7 @@ const GAME_ART: Record<GameId, () => ReactNode> = {
   go: GoThumbnail,
   reversi: ReversiThumbnail,
   xiangqi: XiangqiThumbnail,
+  chess: ChessThumbnail,
   'dots-and-boxes': DotsAndBoxesThumbnail,
   'nested-tic-tac-toe': NestedTicTacToeThumbnail,
 }
