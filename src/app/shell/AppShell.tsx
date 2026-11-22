@@ -16,7 +16,7 @@ export interface AppShellProps {
 function resolveTitle(match: RouteMatch): string {
   switch (match.route.id) {
     case 'home':
-      return '桌游实验室'
+      return '策略游戏集锦'
     case 'game': {
       const game = GAMES.find((item) => item.id === match.params.gameId)
       return game?.name ?? '未知游戏'

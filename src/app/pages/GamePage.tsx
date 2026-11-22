@@ -31,7 +31,7 @@ export function GamePage() {
       <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
         <div className="flex flex-col gap-2">
           <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground">
-            TABLE / 桌游实验室
+            STRATEGY GAME ARCADES / 策略游戏集锦
           </p>
           <h1 className="text-3xl font-semibold tracking-tight">{game.name}</h1>
           <p className="text-sm text-muted-foreground">{game.description}</p>
