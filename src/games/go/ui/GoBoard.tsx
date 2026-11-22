@@ -29,8 +29,6 @@ export function GoBoard({ vm, currentPlayer, interactive, onPlace }: GoBoardProp
   const { size, cells, lastMove, lastCaptured, koPoint, legalPoints } = vm
   const cellPercent = 100 / size
   const legalIndexes = new Set(legalPoints.map(({ row, col }) => row * size + col))
-  const lastMoveValue =
-    lastMove === null ? null : cells[lastMove.row * size + lastMove.col]
 
   return (
     <div className="rounded-xl border border-[#a98f63]/60 bg-[#e6d4b3] p-2 shadow-inner ring-1 ring-[#8a7450]/30">
@@ -144,17 +142,14 @@ export function GoBoard({ vm, currentPlayer, interactive, onPlace }: GoBoardProp
             )
           })}
 
-          {lastMove !== null && lastMoveValue !== null ? (
+          {lastMove !== null ? (
             <div
               className="absolute flex items-center justify-center"
               style={boxStyle(lastMove.row * size + lastMove.col, size, cellPercent)}
             >
               <span
                 aria-hidden="true"
-                className={[
-                  'h-[26%] w-[26%] rounded-full',
-                  lastMoveValue === 'black' ? 'bg-[#f4f0e6]' : 'bg-[#262a25]',
-                ].join(' ')}
+                className="h-[26%] w-[26%] rounded-full bg-primary"
               />
             </div>
           ) : null}
