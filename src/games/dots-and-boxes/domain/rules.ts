@@ -90,7 +90,6 @@ export function adjacentBoxesOfEdge(boxSize: number, edge: DotsEdge): readonly D
 }
 
 export function countBoxEdges(board: DotsEdgeBoard, box: DotsBox): number {
-  const { boxSize } = board
   const edges: readonly DotsEdge[] = [
     { orientation: 'horizontal', row: box.row, col: box.col },
     { orientation: 'horizontal', row: box.row + 1, col: box.col },

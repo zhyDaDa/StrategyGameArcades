@@ -5,9 +5,7 @@ import { replayGame } from '@/core/history/replay'
 import { RandomController } from '@/controllers/RandomController'
 import { ReversiGame } from '../domain/ReversiGame'
 import { reversiStateSchema } from '../domain/schema'
-import type { ReversiAction, ReversiEvent, ReversiObservation, ReversiState } from '../domain/types'
-
-type Session = GameSession<ReversiState, ReversiAction, ReversiObservation, ReversiEvent>
+import type { ReversiAction, ReversiObservation } from '../domain/types'
 
 describe('黑白棋契约', () => {
   const game = new ReversiGame()

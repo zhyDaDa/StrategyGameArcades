@@ -1,5 +1,5 @@
 import type { GameResult } from '@/core/contracts/result'
-import { countWinner, getLegalMoves } from './rules'
+import { getLegalMoves } from './rules'
 import type { ReversiCoord, ReversiSide, ReversiState } from './types'
 
 export function selectResult(state: Readonly<ReversiState>): GameResult | null {

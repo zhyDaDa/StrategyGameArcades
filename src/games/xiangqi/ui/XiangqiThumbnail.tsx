@@ -1,6 +1,7 @@
 import type { XiangqiCoord, XiangqiPieceType, XiangqiSide } from '../domain/types'
 
-const ORIGIN = 5
+const ORIGIN_X = 10
+const ORIGIN_Y = 5
 const STEP = 10
 const PIECE_FONT =
   'KaiTi, STKaiti, Kaiti SC, Songti SC, STSong, SimSun, Noto Serif CJK SC, serif'
@@ -8,8 +9,8 @@ const PIECE_FONT =
 const COLUMNS = Array.from({ length: 9 }, (_, index) => index)
 const ROWS = Array.from({ length: 10 }, (_, index) => index)
 
-const x = (col: number) => ORIGIN + col * STEP
-const y = (row: number) => ORIGIN + row * STEP
+const x = (col: number) => ORIGIN_X + col * STEP
+const y = (row: number) => ORIGIN_Y + row * STEP
 
 interface ThumbPiece {
   readonly row: number
@@ -62,12 +63,12 @@ const BLACK = '#26231f'
 export function XiangqiThumbnail() {
   return (
     <svg
-      viewBox="0 0 90 100"
+      viewBox="0 0 100 100"
       className="h-full w-full"
       aria-hidden="true"
       focusable="false"
     >
-      <rect width="90" height="100" fill="#e6d4b3" />
+      <rect width="100" height="100" fill="#e6d4b3" />
 
       <g stroke="#9c8253" strokeWidth="0.7">
         <rect x={x(0)} y={y(0)} width={STEP * 8} height={STEP * 9} fill="none" />
