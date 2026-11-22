@@ -1,4 +1,4 @@
-import { Github, Globe, PenLine, type LucideIcon } from 'lucide-react'
+import { GitBranch, Globe, PenLine, type LucideIcon } from 'lucide-react'
 
 interface AuthorLinkItem {
   readonly label: string
@@ -29,7 +29,7 @@ const AUTHOR_LINKS: readonly AuthorLinkItem[] = [
     label: '开源仓库',
     value: 'zhyDaDa/StrategyGameArcades',
     href: 'https://github.com/zhyDaDa/StrategyGameArcades',
-    icon: Github,
+    icon: GitBranch,
     badge: STAR_BADGE,
   },
 ]

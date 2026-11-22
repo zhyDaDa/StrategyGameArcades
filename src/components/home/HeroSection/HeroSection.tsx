@@ -1,4 +1,5 @@
 import { motion, type Variants } from 'motion/react'
+import type { ReactNode } from 'react'
 import { motionTokens } from '@/presentation/motion/tokens'
 
 export interface HeroTitleLine {
@@ -10,7 +11,7 @@ export interface HeroTitleLine {
 export interface HeroSectionProps {
   readonly eyebrow: string
   readonly title: readonly HeroTitleLine[]
-  readonly description: string
+  readonly description: ReactNode
   readonly highlights: readonly string[]
 }
 
@@ -47,7 +48,7 @@ export function HeroSection({
         aria-hidden
         className="pointer-events-none absolute -top-8 right-0 hidden select-none text-[8rem] font-black leading-none tracking-[0.06em] text-foreground/5 lg:block"
       >
-        ARCADE
+        ARCADES
       </span>
       <motion.div
         variants={container}
