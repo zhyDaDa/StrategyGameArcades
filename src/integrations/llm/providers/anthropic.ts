@@ -1,4 +1,11 @@
 import { z } from 'zod'
+import { withTimeout } from '../../http/signal'
+import {
+  LlmRequestError,
+  isAbortLike,
+  llmHttpError,
+  llmNetworkError,
+} from '../errors'
 import type { LlmChatMessage, LlmClient } from '../types'
 
 const messageSchema = z.object({
@@ -9,6 +16,7 @@ export interface AnthropicOptions {
   readonly baseUrl: string
   readonly apiKey: string
   readonly model: string
+  readonly timeoutMs: number
 }
 
 /** Anthropic Messages API（纯静态部署 + 用户自带 Key 需显式声明浏览器直连）。 */
@@ -18,14 +26,26 @@ export class AnthropicClient implements LlmClient {
 
   private readonly baseUrl: string
   private readonly apiKey: string
+  private readonly timeoutMs: number
 
   constructor(options: AnthropicOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, '')
-    this.apiKey = options.apiKey
+    this.apiKey = options.apiKey.trim()
     this.model = options.model
+    this.timeoutMs = options.timeoutMs
   }
 
   async complete(messages: readonly LlmChatMessage[], signal: AbortSignal): Promise<string> {
+    if (this.baseUrl === '') {
+      throw new LlmRequestError('invalid-config', '接口地址为空。')
+    }
+    if (this.apiKey === '') {
+      throw new LlmRequestError('invalid-config', 'Anthropic 端点必须提供 API Key。')
+    }
+    if (this.model.trim() === '') {
+      throw new LlmRequestError('invalid-config', '模型名称为空。')
+    }
+
     const system = messages
       .filter((message) => message.role === 'system')
       .map((message) => message.content)
@@ -34,27 +54,68 @@ export class AnthropicClient implements LlmClient {
       .filter((message) => message.role !== 'system')
       .map((message) => ({ role: message.role, content: message.content }))
 
-    const response = await fetch(`${this.baseUrl}/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': this.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({ model: this.model, max_tokens: 1024, system, messages: rest }),
-      signal,
-    })
-    if (!response.ok) {
-      const body = await response.text()
-      throw new Error(`模型服务返回 ${response.status}：${body.slice(0, 200)}`)
+    const timed = withTimeout(signal, this.timeoutMs)
+    try {
+      const response = await fetch(`${this.baseUrl}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: this.model,
+          max_tokens: 1024,
+          system,
+          messages: rest,
+        }),
+        signal: timed.signal,
+      })
+      if (!response.ok) {
+        throw llmHttpError(response.status, await response.text())
+      }
+      const json: unknown = await readJson(response)
+      const parsed = messageSchema.safeParse(json)
+      if (!parsed.success) {
+        throw new LlmRequestError('bad-response', '响应不符合 Anthropic Messages 结构。', {
+          detail: parsed.error.message.slice(0, 200),
+        })
+      }
+      const text = parsed.data.content.map((block) => block.text).join('')
+      if (text.trim() === '') {
+        throw new LlmRequestError('bad-response', '模型服务未返回文本内容。')
+      }
+      return text
+    } catch (error) {
+      throw mapRequestError(error, signal, timed.timedOut())
+    } finally {
+      timed.dispose()
     }
-    const json: unknown = await response.json()
-    const parsed = messageSchema.parse(json)
-    const text = parsed.content.map((block) => block.text).join('')
-    if (text.trim() === '') {
-      throw new Error('模型服务未返回文本内容。')
-    }
-    return text
   }
+}
+
+async function readJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json()
+  } catch (error) {
+    throw new LlmRequestError('bad-response', '模型服务返回的不是合法 JSON。', {
+      detail: error instanceof Error ? error.message : null,
+    })
+  }
+}
+
+function mapRequestError(error: unknown, signal: AbortSignal, timedOut: boolean): Error {
+  if (error instanceof LlmRequestError) {
+    return error
+  }
+  if (timedOut) {
+    return new LlmRequestError('timeout', '模型请求超时。', {
+      detail: error instanceof Error ? error.message : null,
+    })
+  }
+  if (signal.aborted || isAbortLike(error)) {
+    return error instanceof Error ? error : new LlmRequestError('aborted', '请求已取消。')
+  }
+  return llmNetworkError(error)
 }

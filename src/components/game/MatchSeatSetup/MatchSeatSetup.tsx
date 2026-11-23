@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { SEAT_ACCENT_CLASS, SEAT_KIND_META } from '@/presentation/match-setup/seat-kinds'
 import type { SeatAssignment } from '@/presentation/match-setup/types'
+import { describeAiConfig } from '@/presentation/match-setup/ai-config'
 import { SeatKindIcon } from '../SeatKindIcon/SeatKindIcon'
 
 export interface MatchSeatEntry<S extends string> {
@@ -42,6 +43,9 @@ export function MatchSeatSetup<S extends string>({
           }
           const meta = SEAT_KIND_META[assignment.type]
           const accent = SEAT_ACCENT_CLASS[meta.accent]
+          const label =
+            assignment.name ??
+            (assignment.ai !== undefined ? describeAiConfig(assignment.ai) : meta.label)
 
           return (
             <div
@@ -66,7 +70,7 @@ export function MatchSeatSetup<S extends string>({
                       <SeatKindIcon type={assignment.type} className="size-3" />
                     </span>
                     <span className={accent.text}>
-                      {assignment.name ?? meta.label}
+                      {label}
                     </span>
                     {youSeat === seat.id ? (
                       <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">

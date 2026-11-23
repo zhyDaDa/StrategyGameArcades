@@ -1,7 +1,11 @@
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import type { MatchSeatEntry } from '@/components/game/MatchSeatSetup/MatchSeatSetup'
 import { PlayerBadge } from '@/components/game/PlayerBadge/PlayerBadge'
 import { TwoSeatMatchConfigView } from '@/components/game/TwoSeatMatchConfig/TwoSeatMatchConfig'
+import {
+  createAiTestPosition,
+  type AiGameTestContext,
+} from '@/presentation/match-setup/ai-test-context'
 import {
   PLAYER_SEAT_META,
   type PlayerSeatMeta,
@@ -46,11 +50,24 @@ export function NestedTicTacToeConfigView({
   header,
   onStart,
 }: NestedTicTacToeConfigViewProps) {
+  const testContext = useMemo<AiGameTestContext>(() => {
+    const game = createNestedTicTacToeGame()
+    const initial = game.createInitialState()
+    return {
+      gameId: 'nested-tic-tac-toe',
+      gameName: '九宫井字棋',
+      rulesSummary: NESTED_TIC_TAC_TOE_RULES_SUMMARY,
+      parseAction: (raw) => game.parseAction(raw),
+      createPosition: (playerId) => createAiTestPosition(game, initial, playerId),
+    }
+  }, [])
+
   return (
     <TwoSeatMatchConfigView<NestedTicTacToeSide>
       header={header}
       seats={SEATS}
       rulesSummary={NESTED_TIC_TAC_TOE_RULES_SUMMARY}
+      testContext={testContext}
       onStart={(config) => {
         const game = createNestedTicTacToeGame()
         onStart({ config, save: game.serialize(game.createInitialState()) })

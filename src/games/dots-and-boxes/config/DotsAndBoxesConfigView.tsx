@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { ConfigDeck } from '@/components/game/ConfigDeck/ConfigDeck'
 import { MatchConfigLayout } from '@/components/game/MatchConfigLayout/MatchConfigLayout'
 import {
@@ -6,14 +6,19 @@ import {
   type MatchSeatEntry,
 } from '@/components/game/MatchSeatSetup/MatchSeatSetup'
 import { SeatConfigPanel } from '@/components/game/SeatConfigPanel/SeatConfigPanel'
-import {
-  EMPTY_SEAT_DRAFT,
-  type SeatDraft,
-} from '@/components/game/SeatConfigPanel/seat-draft'
 import { Button } from '@/components/ui/button'
 import { SEAT_ACCENT_CLASS, SEAT_KIND_META } from '@/presentation/match-setup/seat-kinds'
+import {
+  createAiTestPosition,
+  type AiGameTestContext,
+} from '@/presentation/match-setup/ai-test-context'
+import type { AiSeatConfig } from '@/presentation/match-setup/ai-config'
 import { pickRandomSeat } from '@/presentation/match-setup/seats'
 import { useSeatSetup } from '@/presentation/match-setup/useSeatSetup'
+import {
+  collectSeatIssues,
+  type SeatVerificationMap,
+} from '@/presentation/ai/seat-verification'
 import {
   DOTS_AND_BOXES_SEATS,
   DOTS_BOARD_SIZES,
@@ -46,7 +51,7 @@ export function DotsAndBoxesConfigView({ header, onStart }: DotsAndBoxesConfigVi
   const [firstChoice, setFirstChoice] = useState<FirstPlayerChoice>('random')
   const [activeSeatId, setActiveSeatId] = useState<DotsAndBoxesSeat | null>(null)
   const [lastSeatId, setLastSeatId] = useState<DotsAndBoxesSeat | null>(null)
-  const [drafts, setDrafts] = useState<Record<string, SeatDraft>>({})
+  const [verifications, setVerifications] = useState<SeatVerificationMap>({})
 
   const activeSeats = DOTS_AND_BOXES_SEATS.slice(0, playerCount)
   const setup = useSeatSetup({
@@ -57,7 +62,29 @@ export function DotsAndBoxesConfigView({ header, onStart }: DotsAndBoxesConfigVi
   const activeAssignments = setup.seats.filter((seat) => activeSeats.includes(seat.id))
   const byId = new Map(activeAssignments.map((seat) => [seat.id, seat]))
   const humanCount = activeAssignments.filter((seat) => seat.type === 'human').length
-  const unplayable = activeAssignments.filter((seat) => !SEAT_KIND_META[seat.type].playable)
+  const issues = collectSeatIssues(activeAssignments, verifications)
+  const testContext = useMemo<AiGameTestContext>(() => {
+    const seats = activeSeats.map((id) => ({ id, type: 'algorithm' as const }))
+    function createGame(firstPlayer: DotsAndBoxesSeat) {
+      return createDotsAndBoxesGame({ boxSize, seats, youSeat: null, firstPlayer })
+    }
+    const schemaGame = createGame(activeSeats[0])
+    return {
+      gameId: 'dots-and-boxes',
+      gameName: '方格大战',
+      rulesSummary: DOTS_AND_BOXES_RULES_SUMMARY,
+      parseAction: (raw) => schemaGame.parseAction(raw),
+      createPosition: (playerId) => {
+        const seat = activeSeats.includes(playerId as DotsAndBoxesSeat)
+          ? (playerId as DotsAndBoxesSeat)
+          : activeSeats[0]
+        const game = createGame(seat)
+        return createAiTestPosition(game, game.createInitialState(), playerId)
+      },
+    }
+    // activeSeats 由 playerCount 派生；boxSize 影响样例局面。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerCount, boxSize])
 
   const seatEntries: readonly MatchSeatEntry<DotsAndBoxesSeat>[] = activeSeats.map(
     (seat) => ({
@@ -68,8 +95,7 @@ export function DotsAndBoxesConfigView({ header, onStart }: DotsAndBoxesConfigVi
   )
   const lastSeat = seatEntries.find((seat) => seat.id === lastSeatId)
   const lastAssignment = lastSeatId === null ? undefined : byId.get(lastSeatId)
-  const draft =
-    lastSeatId === null ? EMPTY_SEAT_DRAFT : drafts[lastSeatId] ?? EMPTY_SEAT_DRAFT
+  const verification = lastSeatId === null ? undefined : verifications[lastSeatId]
 
   function changePlayerCount(next: DotsMatchPlayerCount) {
     setPlayerCount(next)
@@ -90,14 +116,10 @@ export function DotsAndBoxesConfigView({ header, onStart }: DotsAndBoxesConfigVi
     setActiveSeatId(null)
   }
 
-  function updateDraft(id: DotsAndBoxesSeat, patch: Partial<SeatDraft>) {
-    setDrafts((current) => ({
-      ...current,
-      [id]: { ...(current[id] ?? EMPTY_SEAT_DRAFT), ...patch },
-    }))
-  }
-
   function start() {
+    if (issues.length > 0) {
+      return
+    }
     const seats = setup.seats.slice(0, playerCount)
     const firstPlayer =
       firstChoice === 'random' || !activeSeats.includes(firstChoice)
@@ -111,6 +133,21 @@ export function DotsAndBoxesConfigView({ header, onStart }: DotsAndBoxesConfigVi
     }
     const game = createDotsAndBoxesGame(config)
     onStart({ config, save: game.serialize(game.createInitialState()) })
+  }
+
+  function changeVerification(seatId: DotsAndBoxesSeat, ai: AiSeatConfig | undefined) {
+    setup.setSeatAi(seatId, ai)
+  }
+
+  function clearVerification(seatId: DotsAndBoxesSeat) {
+    setVerifications((current) => {
+      if (!(seatId in current)) {
+        return current
+      }
+      const next = { ...current }
+      delete next[seatId]
+      return next
+    })
   }
 
   const summary = (
@@ -155,14 +192,16 @@ export function DotsAndBoxesConfigView({ header, onStart }: DotsAndBoxesConfigVi
       <MatchConfigLayout
         onStart={start}
         startLabel={humanCount === 0 ? '观看对局' : '开始对局'}
-        startDisabled={unplayable.length > 0}
+        startDisabled={issues.length > 0}
         summary={summary}
         footer={
-          unplayable.length > 0 ? (
-            <p className="text-xs text-destructive">
-              {unplayable.map((seat) => SEAT_KIND_META[seat.type].label).join(' / ')}
-              接入尚未接通；先把这些席位换成人类或算法再开局。
-            </p>
+          issues.length > 0 ? (
+            <ul className="flex flex-col gap-1 text-xs text-destructive">
+              {issues.slice(0, 3).map((issue) => (
+                <li key={issue.seatId}>{issue.message}</li>
+              ))}
+              {issues.length > 3 ? <li>还有 {issues.length - 3} 个问题需要处理。</li> : null}
+            </ul>
           ) : undefined
         }
       >
@@ -257,14 +296,22 @@ export function DotsAndBoxesConfigView({ header, onStart }: DotsAndBoxesConfigVi
         seat={lastSeat}
         assignment={lastAssignment}
         isHost={setup.youSeat === lastSeat.id}
-        draft={draft}
-        onTypeChange={(type) => setup.setSeatType(lastSeat.id, type)}
+        testContext={testContext}
+        verification={verification}
+        onTypeChange={(type) => {
+          setup.setSeatType(lastSeat.id, type)
+          clearVerification(lastSeat.id)
+        }}
         onNameChange={(name) => setup.setSeatName(lastSeat.id, name)}
+        onAiChange={(ai) => changeVerification(lastSeat.id, ai)}
+        onVerified={(next) => {
+          setVerifications((current) => ({ ...current, [lastSeat.id]: next }))
+        }}
         onMakeHost={() => {
           setup.setSeatType(lastSeat.id, 'human')
+          clearVerification(lastSeat.id)
           setup.setYouSeat(lastSeat.id)
         }}
-        onDraftChange={(patch) => updateDraft(lastSeat.id, patch)}
         onClose={closeSeat}
       />
     ) : null

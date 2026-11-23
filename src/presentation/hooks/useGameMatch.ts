@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- 把外部 Session 快照同步到 UI 状态是此 hook 的职责 */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { runControllerTurn } from '@/core/session/turn-loop'
 import type { PlayerController, PlayerId } from '@/core/contracts/player'
@@ -26,6 +27,8 @@ export interface UseGameMatchResult<S, E> {
   readonly error: Error | null
   readonly thinkingPlayerId: PlayerId | null
   readonly clearError: () => void
+  /** 清除错误并重新给当前玩家一次决策机会（用于 AI 失败后重试）。 */
+  readonly retry: () => void
 }
 
 /**
@@ -42,6 +45,7 @@ export function useGameMatch<S, A, O, E>(
   const snapshot = useGameSnapshot(session)
   const [error, setError] = useState<Error | null>(null)
   const [thinkingPlayerId, setThinkingPlayerId] = useState<PlayerId | null>(null)
+  const [retryNonce, setRetryNonce] = useState(0)
 
   const playersRef = useRef(players)
   useEffect(() => {
@@ -50,6 +54,11 @@ export function useGameMatch<S, A, O, E>(
 
   const clearError = useCallback(() => {
     setError(null)
+  }, [])
+
+  const retry = useCallback(() => {
+    setError(null)
+    setRetryNonce((current) => current + 1)
   }, [])
 
   useEffect(() => {
@@ -120,9 +129,10 @@ export function useGameMatch<S, A, O, E>(
     snapshot.pendingUndo,
     snapshot.result,
     minimumThinkMs,
+    retryNonce,
   ])
 
-  return { snapshot, error, thinkingPlayerId, clearError }
+  return { snapshot, error, thinkingPlayerId, clearError, retry }
 }
 
 function isAbortError(error: unknown): boolean {

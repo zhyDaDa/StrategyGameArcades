@@ -24,6 +24,7 @@ export function GoView(props: GoViewProps) {
               tone={props.message.type}
               text={props.message.text}
               onDismiss={props.onDismissMessage}
+            onRetry={props.message.type === "error" ? props.onRetry : undefined}
             />
           ) : null}
           <GoBoard

@@ -1,10 +1,12 @@
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   SEAT_ACCENT_CLASS,
   SEAT_KIND_META,
 } from '@/presentation/match-setup/seat-kinds'
+import type { AiGameTestContext } from '@/presentation/match-setup/ai-test-context'
+import type { AiSeatConfig } from '@/presentation/match-setup/ai-config'
 import type { SeatAssignment, SeatType } from '@/presentation/match-setup/types'
+import type { SeatVerification } from '@/presentation/ai/seat-verification'
 import type { MatchSeatEntry } from '../MatchSeatSetup/MatchSeatSetup'
 import { SeatKindIcon } from '../SeatKindIcon/SeatKindIcon'
 import { AlgorithmSeatForm } from './AlgorithmSeatForm'
@@ -12,17 +14,18 @@ import { HumanSeatForm } from './HumanSeatForm'
 import { LlmSeatForm } from './LlmSeatForm'
 import { LocalSeatForm } from './LocalSeatForm'
 import { SeatConfigTabs } from './SeatConfigTabs'
-import type { SeatDraft } from './seat-draft'
 
 export interface SeatConfigPanelProps<S extends string> {
   readonly seat: MatchSeatEntry<S>
   readonly assignment: SeatAssignment<S>
   readonly isHost: boolean
-  readonly draft: SeatDraft
+  readonly testContext: AiGameTestContext
+  readonly verification: SeatVerification | undefined
   readonly onTypeChange: (type: SeatType) => void
   readonly onNameChange: (name: string) => void
+  readonly onAiChange: (ai: AiSeatConfig | undefined) => void
+  readonly onVerified: (verification: SeatVerification) => void
   readonly onMakeHost: () => void
-  readonly onDraftChange: (patch: Partial<SeatDraft>) => void
   readonly onClose: () => void
 }
 
@@ -35,20 +38,21 @@ export function SeatConfigPanel<S extends string>({
   seat,
   assignment,
   isHost,
-  draft,
+  testContext,
+  verification,
   onTypeChange,
   onNameChange,
+  onAiChange,
+  onVerified,
   onMakeHost,
-  onDraftChange,
   onClose,
 }: SeatConfigPanelProps<S>) {
-  const [activeType, setActiveType] = useState<SeatType>(assignment.type)
+  const activeType = assignment.type
   const meta = SEAT_KIND_META[activeType]
   const currentMeta = SEAT_KIND_META[assignment.type]
   const currentAccent = SEAT_ACCENT_CLASS[currentMeta.accent]
 
   function changeType(next: SeatType) {
-    setActiveType(next)
     onTypeChange(next)
   }
 
@@ -94,12 +98,35 @@ export function SeatConfigPanel<S extends string>({
               onMakeHost={onMakeHost}
             />
           ) : null}
-          {activeType === 'algorithm' ? <AlgorithmSeatForm /> : null}
+          {activeType === 'algorithm' ? (
+            <AlgorithmSeatForm
+              seatId={assignment.id}
+              config={assignment.ai}
+              onChange={onAiChange}
+              context={testContext}
+              verification={verification}
+              onVerified={onVerified}
+            />
+          ) : null}
           {activeType === 'llm' ? (
-            <LlmSeatForm draft={draft} onDraftChange={onDraftChange} />
+            <LlmSeatForm
+              seatId={assignment.id}
+              config={assignment.ai}
+              onChange={onAiChange}
+              context={testContext}
+              verification={verification}
+              onVerified={onVerified}
+            />
           ) : null}
           {activeType === 'local' ? (
-            <LocalSeatForm draft={draft} onDraftChange={onDraftChange} />
+            <LocalSeatForm
+              seatId={assignment.id}
+              config={assignment.ai}
+              onChange={onAiChange}
+              context={testContext}
+              verification={verification}
+              onVerified={onVerified}
+            />
           ) : null}
         </div>
       </div>

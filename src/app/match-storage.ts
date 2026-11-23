@@ -15,16 +15,11 @@ export function readStoredMatch(gameId: string): StoredMatchResult {
   if (typeof window === 'undefined') {
     return { ok: false, reason: 'missing' }
   }
-  let raw: string | null = null
   try {
-    raw = window.localStorage.getItem(KEY_PREFIX + gameId)
-  } catch {
-    return { ok: false, reason: 'invalid' }
-  }
-  if (raw === null) {
-    return { ok: false, reason: 'missing' }
-  }
-  try {
+    const raw = window.localStorage.getItem(KEY_PREFIX + gameId)
+    if (raw === null) {
+      return { ok: false, reason: 'missing' }
+    }
     const parsed: unknown = JSON.parse(raw)
     if (!isMatchStartPayload(parsed)) {
       return { ok: false, reason: 'invalid' }

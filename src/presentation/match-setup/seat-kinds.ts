@@ -10,8 +10,6 @@ export interface SeatKindMeta {
   /** 该接入方式承担什么决策，用于配置面板的说明。 */
   readonly description: string
   readonly accent: SeatAccent
-  /** 本阶段是否已接通对局；未接通的接入方式只保留配置位。 */
-  readonly playable: boolean
 }
 
 /** 接入方式的唯一来源：标签、配色、能否开局都从这里取。 */
@@ -22,31 +20,27 @@ export const SEAT_KIND_META: Record<SeatType, SeatKindMeta> = {
     hint: '本机热座',
     description: '由本机玩家轮流操作，适合线下同桌对弈。',
     accent: 'primary',
-    playable: true,
   },
   algorithm: {
     id: 'algorithm',
     label: '算法',
-    hint: '内置启发式',
-    description: '使用游戏内置的启发式搜索，不依赖网络，开箱即用。',
+    hint: '内置 / 编写策略',
+    description: '使用内置启发式，或在浏览器沙箱中运行你自己的 JavaScript 策略。',
     accent: 'green',
-    playable: true,
   },
   llm: {
     id: 'llm',
     label: '大模型',
     hint: '云端推理',
-    description: '通过兼容接口接入云端大模型，作为该席位的决策者。',
+    description: '用自己的 API Key 直连云端模型；密钥只留在你的浏览器里。',
     accent: 'blue',
-    playable: false,
   },
   local: {
     id: 'local',
     label: '小模型',
     hint: '本地推理',
-    description: '在本地运行的小参数模型，适合离线与低延迟场景。',
+    description: '连接本机模型服务或本地决策服务，棋局数据不经过本站服务器。',
     accent: 'secondary',
-    playable: false,
   },
 }
 

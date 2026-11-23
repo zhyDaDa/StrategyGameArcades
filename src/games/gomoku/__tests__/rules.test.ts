@@ -92,15 +92,19 @@ describe('五子棋规则', () => {
 
   it('findWinningLine 返回正确连线', () => {
     const state = play([
-      ['black', { type: 'place', row: 7, col: 7 }],
+      ['black', { type: 'place', row: 7, col: 5 }],
       ['white', { type: 'place', row: 0, col: 0 }],
-      ['black', { type: 'place', row: 7, col: 8 }],
+      ['black', { type: 'place', row: 7, col: 6 }],
       ['white', { type: 'place', row: 0, col: 1 }],
+      ['black', { type: 'place', row: 7, col: 7 }],
+      ['white', { type: 'place', row: 0, col: 2 }],
+      ['black', { type: 'place', row: 7, col: 8 }],
+      ['white', { type: 'place', row: 0, col: 3 }],
       ['black', { type: 'place', row: 7, col: 9 }],
     ])
     const line = findWinningLine(state.cells, state.size, { row: 7, col: 9 }, 'black')
     expect(line).not.toBeNull()
-    expect(line?.length).toBe(3)
+    expect(line?.length).toBe(5)
   })
 
   it('wouldWinAt 判断候选落点，不修改棋盘', () => {

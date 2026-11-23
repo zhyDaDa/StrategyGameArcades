@@ -12,13 +12,5 @@ export interface LlmClient {
   complete(messages: readonly LlmChatMessage[], signal: AbortSignal): Promise<string>
 }
 
-export type LlmProviderKind = 'openai-compatible' | 'anthropic'
-
-/** 用户自带的模型端点配置（仅存于用户本地，绝不写入仓库）。 */
-export interface LlmClientConfig {
-  readonly kind: LlmProviderKind
-  readonly name: string
-  readonly baseUrl: string
-  readonly apiKey: string
-  readonly model: string
-}
+export const LLM_PROVIDER_KINDS = ['openai-compatible', 'anthropic'] as const
+export type LlmProviderKind = (typeof LLM_PROVIDER_KINDS)[number]

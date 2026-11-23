@@ -50,6 +50,28 @@ pnpm build
 
 ---
 
+## AI 接入（代码策略 / 云端 BYOK / localhost）
+
+席位配置页的「算法 / 大模型 / 小模型」已经接通真实决策：
+
+- **编写 JavaScript 策略**：QuickJS WASM 在独立 Worker 中执行，不使用页面 `eval`；
+  单步超时后终止 Worker，输出动作必须通过游戏 schema 与合法动作集校验。
+- **云端大模型 BYOK**：浏览器直连用户填写的 OpenAI 兼容 / Anthropic 端点；
+  Key 默认只在内存，可选明文记住到 localStorage，可随时删除或全部清空。
+- **localhost 模型**：Ollama / LM Studio / 任意 OpenAI 兼容服务；只允许 `http://localhost` /
+  `http://127.0.0.1` 使用明文 http，其余端点强制 https。
+- **自定义 `/decide`**：本机决策服务，协议版本 `1`，返回动作仍由本站校验。
+- 每个 AI 席位必须用真实样例局面测试通过才能开局；配置指纹变化后测试立即失效。
+- 连接失败按 URL / CORS / 401 / 403 / 404 / 429 / 超时 / 响应格式分类显示，不静默回退。
+
+详细文档：
+
+- [`docs/AI_ACCESS.md`](docs/AI_ACCESS.md)：安全、隐私、Key 存储、CORS 排查、残余风险
+- [`docs/STRATEGY_AUTHORING.md`](docs/STRATEGY_AUTHORING.md)：策略协议、各游戏动作形状、导入导出
+- [`docs/LOCAL_AI_SERVICE.md`](docs/LOCAL_AI_SERVICE.md)：`/decide` 协议与 FastAPI 示例
+
+当前**不开放** JSON 权重 / ONNX 导入：缺少可验证的特征编码与动作索引协议时，不谎称兼容。
+
 ## 基础 UI：shadcn/ui
 
 **后续所有基础 UI 都从这里取，不自己重写轮子：**

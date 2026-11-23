@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { HumanController } from '@/controllers/HumanController'
+import { buildSeatPlayers } from '@/app/match-players/buildSeatPlayers'
+import type { HumanController } from '@/controllers/HumanController'
 import type { PlayerId } from '@/core/contracts/player'
 import { GameSession } from '@/core/session/GameSession'
 import { XiangqiHeuristicController } from '@/games/xiangqi/ai/XiangqiHeuristicController'
 import {
   DEFAULT_XIANGQI_MATCH_CONFIG,
+  XIANGQI_RULES_SUMMARY,
   xiangqiMatchConfigSchema,
   type XiangqiMatchConfig,
 } from '@/games/xiangqi/config/match-config'
@@ -25,7 +27,6 @@ import {
   type XiangqiViewMessage,
 } from '@/games/xiangqi/ui/xiangqi-view-model'
 import { useGameMatch, type MatchPlayer } from '@/presentation/hooks/useGameMatch'
-import { assertSeatPlayable } from '@/presentation/match-setup/seat-runtime'
 import { gameConfigPath, useRouter } from '@/routers'
 import { readStoredMatch, saveStoredMatch } from '../../match-storage'
 
@@ -55,12 +56,12 @@ interface XiangqiSeats {
 export function XiangqiMatch() {
   const { navigate } = useRouter()
   const [bundle] = useState(createBundle)
-  const seats = useMemo(() => createSeats(bundle.config), [bundle.config])
+  const seats = useMemo(() => createSeats(bundle.game, bundle.config), [bundle])
   const session = useMemo<XiangqiSession>(
     () => new GameSession(bundle.game, { initialState: bundle.initialState }),
     [bundle],
   )
-  const { snapshot, error, thinkingPlayerId, clearError } = useGameMatch({
+  const { snapshot, error, thinkingPlayerId, clearError, retry } = useGameMatch({
     session,
     players: seats.players,
   })
@@ -75,6 +76,7 @@ export function XiangqiMatch() {
         config: bundle.config,
         save: bundle.game.serialize({ ...snapshot.state }),
       })
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 清除上一次 localStorage 写入错误
       setStorageError(null)
     } catch (err) {
       setStorageError(toError(err))
@@ -196,6 +198,7 @@ export function XiangqiMatch() {
       onRestart={handleRestart}
       onBackToConfig={() => navigate(gameConfigPath(GAME_ID))}
       onDismissMessage={dismissMessage}
+      onRetry={error !== null ? retry : undefined}
     />
   )
 }
@@ -235,26 +238,18 @@ function createBundle(): XiangqiMatchBundle {
   }
 }
 
-function createSeats(config: XiangqiMatchConfig): XiangqiSeats {
-  const players = new Map<PlayerId, MatchPlayer<XiangqiObservation, XiangqiAction>>()
-  const humans = new Map<XiangqiSide, XiangqiHuman>()
-
-  for (const seat of config.seats) {
-    if (seat.type === 'human') {
-      const human = new HumanController<XiangqiObservation, XiangqiAction>(seat.id)
-      humans.set(seat.id, human)
-      players.set(seat.id, { controller: human, role: 'human', undoPolicy: 'ask' })
-    } else {
-      assertSeatPlayable(seat)
-      const ai = new XiangqiHeuristicController(seat.id)
-      players.set(seat.id, { controller: ai, role: 'bot', undoPolicy: 'accept' })
-    }
-  }
-
+function createSeats(game: XiangqiGame, config: XiangqiMatchConfig): XiangqiSeats {
+  const built = buildSeatPlayers(config, {
+    gameId: GAME_ID,
+    gameName: '中国象棋',
+    rulesSummary: XIANGQI_RULES_SUMMARY,
+    parseAction: (raw) => game.parseAction(raw),
+    createAlgorithm: (id) => new XiangqiHeuristicController(id),
+  })
   return {
-    players,
-    humans,
-    humanSides: new Set<XiangqiSide>(humans.keys()),
+    players: built.players,
+    humans: built.humans,
+    humanSides: new Set<XiangqiSide>(built.humans.keys()),
   }
 }
 

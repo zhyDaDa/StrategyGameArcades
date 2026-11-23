@@ -17,6 +17,7 @@ export function XiangqiView(props: XiangqiViewProps) {
             tone={props.message.type}
             text={props.message.text}
             onDismiss={props.onDismissMessage}
+            onRetry={props.message.type === "error" ? props.onRetry : undefined}
           />
         ) : null}
         <XiangqiBoard

@@ -98,4 +98,6 @@ export interface GomokuViewProps {
   readonly onRestart: () => void
   readonly onBackToConfig: () => void
   readonly onDismissMessage: () => void
+  /** 当前错误来自 AI 决策失败时可用：重新调用该席位控制器。 */
+  readonly onRetry?: () => void
 }

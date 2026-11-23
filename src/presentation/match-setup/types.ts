@@ -1,6 +1,9 @@
+import type { AiSeatConfig } from './ai-config'
+
 /**
  * 席位的接入方式：真人、内置算法、云端大模型、本地小模型。
  * 四种方式分别对应四个标准主题色，是「统一游戏接口」的产品核心。
+ * AI 席位的具体来源（代码策略 / 云端 BYOK / localhost 服务）放在 `ai` 里。
  */
 export const SEAT_TYPES = ['human', 'algorithm', 'llm', 'local'] as const
 export type SeatType = (typeof SEAT_TYPES)[number]
@@ -10,6 +13,8 @@ export interface SeatAssignment<S extends string> {
   readonly type: SeatType
   /** 真人玩家的显示名称；非人类席位不使用。 */
   readonly name?: string
+  /** AI 席位的配置；不含任何密钥。人类席位不使用。 */
+  readonly ai?: AiSeatConfig
 }
 
 /**

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { HumanController } from '@/controllers/HumanController'
+import { buildSeatPlayers } from '@/app/match-players/buildSeatPlayers'
+import type { HumanController } from '@/controllers/HumanController'
 import type { PlayerId } from '@/core/contracts/player'
 import { GameSession } from '@/core/session/GameSession'
 import { GomokuHeuristicController } from '@/games/gomoku/ai/GomokuHeuristicController'
 import {
   DEFAULT_GOMOKU_MATCH_CONFIG,
+  GOMOKU_RULES_SUMMARY,
   gomokuMatchConfigSchema,
   type GomokuMatchConfig,
 } from '@/games/gomoku/config/match-config'
@@ -25,7 +27,6 @@ import {
   type GomokuViewMessage,
 } from '@/games/gomoku/ui/gomoku-view-model'
 import { useGameMatch, type MatchPlayer } from '@/presentation/hooks/useGameMatch'
-import { assertSeatPlayable } from '@/presentation/match-setup/seat-runtime'
 import { gameConfigPath, useRouter } from '@/routers'
 import { readStoredMatch, saveStoredMatch } from '../../match-storage'
 
@@ -50,12 +51,12 @@ interface GomokuSeats {
 export function GomokuMatch() {
   const { navigate } = useRouter()
   const [bundle] = useState(createBundle)
-  const seats = useMemo(() => createSeats(bundle.config), [bundle.config])
+  const seats = useMemo(() => createSeats(bundle.game, bundle.config), [bundle])
   const session = useMemo<GomokuSession>(
     () => new GameSession(bundle.game, { initialState: bundle.initialState }),
     [bundle],
   )
-  const { snapshot, error, thinkingPlayerId, clearError } = useGameMatch({
+  const { snapshot, error, thinkingPlayerId, clearError, retry } = useGameMatch({
     session,
     players: seats.players,
   })
@@ -70,6 +71,7 @@ export function GomokuMatch() {
         config: bundle.config,
         save: bundle.game.serialize({ ...snapshot.state }),
       })
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 清除上一次 localStorage 写入错误
       setStorageError(null)
     } catch (err) {
       setStorageError(toError(err))
@@ -192,6 +194,7 @@ export function GomokuMatch() {
       onRestart={handleRestart}
       onBackToConfig={() => navigate(gameConfigPath(GAME_ID))}
       onDismissMessage={dismissMessage}
+      onRetry={error !== null ? retry : undefined}
     />
   )
 }
@@ -231,26 +234,18 @@ function createBundle(): GomokuMatchBundle {
   }
 }
 
-function createSeats(config: GomokuMatchConfig): GomokuSeats {
-  const players = new Map<PlayerId, MatchPlayer<GomokuObservation, GomokuAction>>()
-  const humans = new Map<GomokuSide, GomokuHuman>()
-
-  for (const seat of config.seats) {
-    if (seat.type === 'human') {
-      const human = new HumanController<GomokuObservation, GomokuAction>(seat.id)
-      humans.set(seat.id, human)
-      players.set(seat.id, { controller: human, role: 'human', undoPolicy: 'ask' })
-    } else {
-      assertSeatPlayable(seat)
-      const ai = new GomokuHeuristicController(seat.id)
-      players.set(seat.id, { controller: ai, role: 'bot', undoPolicy: 'accept' })
-    }
-  }
-
+function createSeats(game: GomokuGame, config: GomokuMatchConfig): GomokuSeats {
+  const built = buildSeatPlayers(config, {
+    gameId: GAME_ID,
+    gameName: '五子棋',
+    rulesSummary: GOMOKU_RULES_SUMMARY,
+    parseAction: (raw) => game.parseAction(raw),
+    createAlgorithm: (id) => new GomokuHeuristicController(id),
+  })
   return {
-    players,
-    humans,
-    humanSides: new Set<GomokuSide>(humans.keys()),
+    players: built.players,
+    humans: built.humans,
+    humanSides: new Set<GomokuSide>(built.humans.keys()),
   }
 }
 

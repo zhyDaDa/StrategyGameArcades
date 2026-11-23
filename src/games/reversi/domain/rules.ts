@@ -142,7 +142,7 @@ export function applyAction(
     throw new Error('非法落子：该位置不能形成夹击')
   }
 
-  let cells = applyPlace(state.cells, state.size, row, col, playerId, flipped)
+  const cells = applyPlace(state.cells, state.size, row, col, playerId, flipped)
   const lastMove = { row, col, flipped }
   const events: ReversiEvent[] = [{ type: 'piece.placed', playerId, row, col, flipped }]
   let currentPlayer = opponentOf(playerId)

@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-imports -- 测试需要装配真实控制器与游戏规则 */
 import { describe, expect, it } from 'vitest'
 import { GameSession, SessionError } from '@/core/session/GameSession'
 import { runControllerTurn } from '@/core/session/turn-loop'

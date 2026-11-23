@@ -67,7 +67,7 @@ describe('九宫井字棋规则', () => {
     expect(macroIndexOf(4, 4)).toBe(4)
     expect(macroRowOf(4)).toBe(1)
     expect(macroColOf(4)).toBe(1)
-    expect(macroIndexOf(3, 0)).toBe(1)
+    expect(macroIndexOf(3, 0)).toBe(3)
     expect(innerIndexOf(3, 0)).toBe(0)
     expect(innerCellIndex(4, 0)).toBe(indexOf(3, 3))
     expect(innerCellIndex(4, 4)).toBe(indexOf(4, 4))
@@ -85,7 +85,7 @@ describe('九宫井字棋规则', () => {
 
   it('下一手由落点的宫内位置决定，而不是落点所在的宫', () => {
     const state = applyAction(createInitialState(), 'red', { type: 'place', row: 3, col: 0 }).state
-    expect(macroIndexOf(3, 0)).toBe(1)
+    expect(macroIndexOf(3, 0)).toBe(3)
     expect(innerIndexOf(3, 0)).toBe(0)
     expect(forcedMacroBoardIndex(state)).toBe(0)
     expect(

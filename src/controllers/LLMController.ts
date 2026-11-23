@@ -28,6 +28,9 @@ export class LLMController<O, A> implements PlayerController<O, A> {
   }
 
   async decide(ctx: DecideContext<O, A>): Promise<A> {
+    if (ctx.legalActions.length === 0) {
+      throw new Error(`玩家 ${ctx.playerId} 没有可行动作。`)
+    }
     const maxRetries = this.options.maxRetries ?? 1
     let lastError: unknown = null
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
@@ -48,6 +51,8 @@ export class LLMController<O, A> implements PlayerController<O, A> {
         }
         lastError = new Error('模型返回的动作不在合法动作集合中。')
       } catch (err) {
+        // 取消必须立刻向上抛，不能当成「模型输出了坏结果」再重试一次。
+        throwIfAborted(ctx.signal)
         lastError = err
       }
     }

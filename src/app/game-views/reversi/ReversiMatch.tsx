@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { HumanController } from '@/controllers/HumanController'
+import { buildSeatPlayers } from '@/app/match-players/buildSeatPlayers'
+import type { HumanController } from '@/controllers/HumanController'
 import type { PlayerId } from '@/core/contracts/player'
 import { GameSession } from '@/core/session/GameSession'
 import { ReversiHeuristicController } from '@/games/reversi/ai/ReversiHeuristicController'
 import {
   DEFAULT_REVERSI_MATCH_CONFIG,
+  REVERSI_RULES_SUMMARY,
   reversiMatchConfigSchema,
   type ReversiMatchConfig,
 } from '@/games/reversi/config/match-config'
@@ -27,7 +29,6 @@ import {
   type ReversiViewMessage,
 } from '@/games/reversi/ui/reversi-view-model'
 import { useGameMatch, type MatchPlayer } from '@/presentation/hooks/useGameMatch'
-import { assertSeatPlayable } from '@/presentation/match-setup/seat-runtime'
 import { gameConfigPath, useRouter } from '@/routers'
 import { readStoredMatch, saveStoredMatch } from '../../match-storage'
 
@@ -52,12 +53,12 @@ interface ReversiSeats {
 export function ReversiMatch() {
   const { navigate } = useRouter()
   const [bundle] = useState(createBundle)
-  const seats = useMemo(() => createSeats(bundle.config), [bundle.config])
+  const seats = useMemo(() => createSeats(bundle.game, bundle.config), [bundle])
   const session = useMemo<ReversiSession>(
     () => new GameSession(bundle.game, { initialState: bundle.initialState }),
     [bundle],
   )
-  const { snapshot, error, thinkingPlayerId, clearError } = useGameMatch({
+  const { snapshot, error, thinkingPlayerId, clearError, retry } = useGameMatch({
     session,
     players: seats.players,
   })
@@ -72,6 +73,7 @@ export function ReversiMatch() {
         config: bundle.config,
         save: bundle.game.serialize({ ...snapshot.state }),
       })
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 清除上一次 localStorage 写入错误
       setStorageError(null)
     } catch (err) {
       setStorageError(toError(err))
@@ -195,6 +197,7 @@ export function ReversiMatch() {
       onRestart={handleRestart}
       onBackToConfig={() => navigate(gameConfigPath(GAME_ID))}
       onDismissMessage={dismissMessage}
+      onRetry={error !== null ? retry : undefined}
     />
   )
 }
@@ -234,26 +237,18 @@ function createBundle(): ReversiMatchBundle {
   }
 }
 
-function createSeats(config: ReversiMatchConfig): ReversiSeats {
-  const players = new Map<PlayerId, MatchPlayer<ReversiObservation, ReversiAction>>()
-  const humans = new Map<ReversiSide, ReversiHuman>()
-
-  for (const seat of config.seats) {
-    if (seat.type === 'human') {
-      const human = new HumanController<ReversiObservation, ReversiAction>(seat.id)
-      humans.set(seat.id, human)
-      players.set(seat.id, { controller: human, role: 'human', undoPolicy: 'ask' })
-    } else {
-      assertSeatPlayable(seat)
-      const ai = new ReversiHeuristicController(seat.id)
-      players.set(seat.id, { controller: ai, role: 'bot', undoPolicy: 'accept' })
-    }
-  }
-
+function createSeats(game: ReversiGame, config: ReversiMatchConfig): ReversiSeats {
+  const built = buildSeatPlayers(config, {
+    gameId: GAME_ID,
+    gameName: '黑白棋',
+    rulesSummary: REVERSI_RULES_SUMMARY,
+    parseAction: (raw) => game.parseAction(raw),
+    createAlgorithm: (id) => new ReversiHeuristicController(id),
+  })
   return {
-    players,
-    humans,
-    humanSides: new Set<ReversiSide>(humans.keys()),
+    players: built.players,
+    humans: built.humans,
+    humanSides: new Set<ReversiSide>(built.humans.keys()),
   }
 }
 

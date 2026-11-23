@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { refineSeatConfig, seatNameSchema, seatTypeSchema } from '@/presentation/match-setup/schema'
+import { refineSeatAi, refineSeatConfig, seatAiSchema, seatNameSchema, seatTypeSchema } from '@/presentation/match-setup/schema'
 import type { SeatMatchConfig } from '@/presentation/match-setup/types'
 import { NestedTicTacToeGame } from '../domain/NestedTicTacToeGame'
 import { NESTED_SIDES, type NestedTicTacToeSide } from '../domain/types'
@@ -19,7 +19,7 @@ const sideSchema = z.enum(NESTED_SIDES)
 
 export const nestedTicTacToeMatchConfigSchema = z
   .object({
-    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema, name: seatNameSchema })).length(2),
+    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema, name: seatNameSchema, ai: seatAiSchema })).length(2),
     youSeat: sideSchema.nullable(),
   })
   .superRefine((config, ctx) => {
@@ -30,6 +30,7 @@ export const nestedTicTacToeMatchConfigSchema = z
         message: '席位必须按红、蓝顺序排列',
       })
     }
+    config.seats.forEach((seat, index) => refineSeatAi(seat, ctx, ['seats', index, 'ai']))
     refineSeatConfig(config, ctx)
   })
 

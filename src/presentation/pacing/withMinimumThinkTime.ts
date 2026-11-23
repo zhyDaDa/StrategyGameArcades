@@ -31,15 +31,15 @@ export function waitForPacing(ms: number, signal: AbortSignal): Promise<void> {
       reject(createAbortError())
       return
     }
-    let timer: number | undefined
+    const state: { timer?: number } = {}
     const onAbort = () => {
-      if (timer !== undefined) {
-        clearTimeout(timer)
+      if (state.timer !== undefined) {
+        clearTimeout(state.timer)
       }
       signal.removeEventListener('abort', onAbort)
       reject(createAbortError())
     }
-    timer = setTimeout(() => {
+    state.timer = setTimeout(() => {
       signal.removeEventListener('abort', onAbort)
       resolve()
     }, ms)
