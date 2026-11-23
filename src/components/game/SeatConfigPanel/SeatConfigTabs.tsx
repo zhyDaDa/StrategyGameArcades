@@ -1,4 +1,3 @@
-import { ChevronLeft } from 'lucide-react'
 import { motion } from 'motion/react'
 import { motionTokens } from '@/presentation/motion/tokens'
 import { SEAT_ACCENT_CLASS, SEAT_KIND_META } from '@/presentation/match-setup/seat-kinds'
@@ -14,8 +13,11 @@ export interface SeatConfigTabsProps {
 }
 
 /**
- * 纵向接入方式标签：右侧一条竖线，指示器是线上的向左折角，
- * 随选中项上下移动；悬浮时标签文字放大并染上对应主题色。
+ * 纵向接入方式标签。选中态只做两件事：文字染上该接入方式的主题色、
+ * 所在的整行轻微放大（transform，不撑开文档流）。
+ *
+ * 右侧竖线与折角共同构成指示器：竖线随选中项变色并加粗；折角是用背景色
+ * 盖掉竖线中段、只留下上下两条粗边形成的向左弯折，沿竖线在各项之间平滑切换。
  */
 export function SeatConfigTabs({ activeType, onChange }: SeatConfigTabsProps) {
   const activeIndex = SEAT_TYPES.indexOf(activeType)
@@ -36,20 +38,15 @@ export function SeatConfigTabs({ activeType, onChange }: SeatConfigTabsProps) {
                 aria-pressed={active}
                 onClick={() => onChange(type)}
                 className={[
-                  'group/item flex h-18 w-full items-center gap-3 rounded-xl px-4 text-left',
-                  'transition-all duration-200 ease-out',
-                  'hover:bg-muted/50',
-                  active
-                    ? `${accent.softBg} scale-[1.02] outline-2 outline-offset-2 ${accent.outline}`
-                    : 'outline-none',
+                  'group/item flex h-18 w-full origin-left items-center gap-3 rounded-xl px-4 text-left',
+                  'outline-none transition-transform duration-200 ease-out',
+                  active ? 'scale-[1.03]' : '',
                 ].join(' ')}
               >
                 <span
                   className={[
-                    'flex size-9 shrink-0 items-center justify-center rounded-lg border transition-colors duration-200',
-                    active
-                      ? `border-transparent ${accent.softBg} ${accent.text}`
-                      : 'border-border text-muted-foreground',
+                    'flex size-9 shrink-0 items-center justify-center rounded-lg border border-border transition-colors duration-200',
+                    active ? accent.text : 'text-muted-foreground',
                   ].join(' ')}
                 >
                   <SeatKindIcon type={type} className="size-4" />
@@ -67,37 +64,48 @@ export function SeatConfigTabs({ activeType, onChange }: SeatConfigTabsProps) {
                   </span>
                   <span className="text-xs text-muted-foreground">{meta.hint}</span>
                 </span>
-
-                {meta.playable ? null : (
-                  <span className="ml-auto shrink-0 rounded border px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                    草稿
-                  </span>
-                )}
               </button>
             </li>
           )
         })}
       </ul>
 
+      {/* 竖线：随选中项变色并加粗 */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 w-px bg-border"
+        className={[
+          'pointer-events-none absolute inset-y-0 right-0 z-0 w-[3px] rounded-full transition-colors duration-300 ease-out',
+          activeAccent.dot,
+        ].join(' ')}
       />
+
+      {/* 折角：背景色遮掉竖线中段，上下两条粗边形成向左的弯折 */}
       <motion.div
         aria-hidden="true"
         initial={false}
         animate={{ y: activeIndex * TAB_ROW_HEIGHT }}
         transition={motionTokens.transition.travel}
-        className="pointer-events-none absolute right-0 top-0 z-10 flex h-18 w-4 -translate-x-1/2 items-center justify-center"
+        className="pointer-events-none absolute right-0 top-0 z-10 h-18 w-0"
       >
-        <span
+        <svg
+          width="14"
+          height="20"
+          viewBox="0 0 14 20"
           className={[
-            'flex size-4 items-center justify-center rounded-full bg-card ring-1 ring-border',
+            'absolute right-0 top-1/2 -translate-y-1/2 transition-colors duration-300 ease-out',
             activeAccent.text,
           ].join(' ')}
+          fill="none"
         >
-          <ChevronLeft className="size-3" />
-        </span>
+          <rect x="11" y="3" width="3" height="14" fill="var(--background)" />
+          <path
+            d="M 12 3 L 2 10 L 12 17"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </motion.div>
     </nav>
   )

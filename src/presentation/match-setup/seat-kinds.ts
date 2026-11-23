@@ -58,7 +58,6 @@ export const SEAT_ACCENT_CLASS: Record<
   SeatAccent,
   {
     readonly text: string
-    readonly outline: string
     readonly softBg: string
     readonly dot: string
     readonly hoverText: string
@@ -66,28 +65,24 @@ export const SEAT_ACCENT_CLASS: Record<
 > = {
   primary: {
     text: 'text-primary',
-    outline: 'outline-primary',
     softBg: 'bg-primary/10',
     dot: 'bg-primary',
     hoverText: 'group-hover/item:text-primary',
   },
   blue: {
     text: 'text-[var(--color-blue)]',
-    outline: 'outline-[var(--color-blue)]',
     softBg: 'bg-[var(--color-blue)]/10',
     dot: 'bg-[var(--color-blue)]',
     hoverText: 'group-hover/item:text-[var(--color-blue)]',
   },
   green: {
     text: 'text-[var(--color-green)]',
-    outline: 'outline-[var(--color-green)]',
     softBg: 'bg-[var(--color-green)]/10',
     dot: 'bg-[var(--color-green)]',
     hoverText: 'group-hover/item:text-[var(--color-green)]',
   },
   secondary: {
     text: 'text-secondary',
-    outline: 'outline-secondary',
     softBg: 'bg-secondary/10',
     dot: 'bg-secondary',
     hoverText: 'group-hover/item:text-secondary',
