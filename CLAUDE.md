@@ -541,7 +541,7 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 
 - **唯一真源**：`presentation/motion/tokens.ts` 定义时长、`ease.*` 贝塞尔曲线与 `spring.*` 弹簧；`presentation/motion/presets.ts` 存放可直接套用的入场/退场/过渡组合。页面、通用组件、各游戏一律从这里 import。
 - **写之前先搜**：任何 `ease: [...]`、`duration: 0.x`、`spring` 配置落笔前，先检查 tokens/presets 是否已有对应语义；有就复用，没有才新增。禁止把同一条贝塞尔数组复制到 `games/<id>/motion/timings.ts`。
-- **按运动语义命名，而不是按外观**。同一个语义在全站必须共用同一条曲线与时长。例如「标识当前玩家 / 可落区域的位置衬底在格子或行之间移动」是同一类语义（travel/slab）；「缩略图、棋子等元素弹入」共用 `spring.pop`。不要让两款游戏各自发明一条“差不多”的曲线。
+- **按运动语义命名，而不是按外观**。同一个语义在全站必须共用同一条曲线与时长。已登记的成组资产：`motionTokens.transition.travel`（当前玩家衬底、可落区域框、标签/翻页指示器等**位置切换**）、`motionTokens.transition.emphasis`（箭头、分数等**原地脉冲**）、`motionTokens.spring.pop`（缩略图、棋子等**弹入**）。不要让两款游戏各自发明一条“差不多”的曲线。
 - `games/<id>/motion/timings.ts` 只放该游戏**独有**的节奏差异，曲线仍引用 tokens；它不得成为第二份曲线真源。
 - 新增公共资产的准入：至少有两个真实使用场景且语义一致；新增时在 tokens 中写明用途，避免下一个人再重复造一条。
 

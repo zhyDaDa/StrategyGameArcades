@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { dotsMotion } from '../motion/timings'
+import { motionTokens } from '@/presentation/motion/tokens'
 import type { DotsPlayerViewModel } from './dots-and-boxes-view-model'
 import { SeatBadge } from './SeatBadge'
 
@@ -36,8 +36,8 @@ export function DotsPlayersPanel({ players }: DotsPlayersPanelProps) {
                 animate={{ opacity: 1, top: currentIndex * (ROW_HEIGHT_PX + ROW_GAP_PX) }}
                 exit={{ opacity: 0 }}
                 transition={{
-                  top: dotsMotion.slabMove,
-                  opacity: { duration: 0.24 },
+                  top: motionTokens.transition.travel,
+                  opacity: { duration: motionTokens.duration.normal },
                 }}
               >
                 <motion.svg
@@ -46,7 +46,7 @@ export function DotsPlayersPanel({ players }: DotsPlayersPanelProps) {
                   className="absolute top-1/2 left-2 h-4 w-3 -translate-y-1/2 text-primary"
                   initial={current.pulseVersion !== null ? { scale: 1 } : false}
                   animate={current.pulseVersion !== null ? { scale: [1, 1.5, 1] } : { scale: 1 }}
-                  transition={dotsMotion.arrowPulse}
+                  transition={motionTokens.transition.emphasis}
                 >
                   <path d="M0 0 L12 8 L0 16 Z" fill="currentColor" />
                 </motion.svg>
@@ -71,7 +71,7 @@ export function DotsPlayersPanel({ players }: DotsPlayersPanelProps) {
                 className="text-lg font-semibold tabular-nums"
                 initial={player.pulseVersion !== null ? { scale: 1 } : false}
                 animate={player.pulseVersion !== null ? { scale: [1, 1.2, 1] } : { scale: 1 }}
-                transition={dotsMotion.scorePulse}
+                transition={motionTokens.transition.emphasis}
               >
                 {player.score}
               </motion.span>

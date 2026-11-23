@@ -87,7 +87,7 @@ export function SeatConfigTabs({ activeType, onChange }: SeatConfigTabsProps) {
         aria-hidden="true"
         initial={false}
         animate={{ y: activeIndex * TAB_ROW_HEIGHT }}
-        transition={{ duration: motionTokens.duration.normal, ease: motionTokens.ease.out }}
+        transition={motionTokens.transition.travel}
         className="pointer-events-none absolute right-0 top-0 z-10 flex h-18 w-4 -translate-x-1/2 items-center justify-center"
       >
         <span

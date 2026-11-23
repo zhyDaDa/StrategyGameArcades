@@ -66,10 +66,7 @@ export function NestedTicTacToeBoard({
             className="pointer-events-none z-20 rounded-[8px] border-[6px]"
             style={{ gridArea: frameArea, borderColor: frameColor }}
             transition={{
-              layout: {
-                duration: motionTokens.duration.normal,
-                ease: motionTokens.ease.out,
-              },
+              layout: motionTokens.transition.travel,
             }}
           />
         ) : null}

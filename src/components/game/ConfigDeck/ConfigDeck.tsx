@@ -28,10 +28,7 @@ export function ConfigDeck({ open, main, panel }: ConfigDeckProps) {
           className="flex w-[200%] items-stretch"
           initial={false}
           animate={{ x: open ? '-50%' : '0%' }}
-          transition={{
-            duration: motionTokens.duration.deliberate,
-            ease: motionTokens.ease.out,
-          }}
+          transition={motionTokens.transition.travel}
         >
           <div className="w-1/2 shrink-0" inert={open} aria-hidden={open}>
             {main}
