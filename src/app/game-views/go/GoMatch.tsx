@@ -28,6 +28,7 @@ import {
   type GoViewMessage,
 } from '@/games/go/ui/go-view-model'
 import { useGameMatch, type MatchPlayer } from '@/presentation/hooks/useGameMatch'
+import { assertSeatPlayable } from '@/presentation/match-setup/seat-runtime'
 import { gameConfigPath, useRouter } from '@/routers'
 import { readStoredMatch, saveStoredMatch } from '../../match-storage'
 
@@ -249,6 +250,7 @@ function createSeats(config: GoMatchConfig): GoSeats {
       humans.set(seat.id, human)
       players.set(seat.id, { controller: human, role: 'human', undoPolicy: 'ask' })
     } else {
+      assertSeatPlayable(seat)
       const ai = new GoHeuristicController(seat.id)
       players.set(seat.id, { controller: ai, role: 'bot', undoPolicy: 'accept' })
     }

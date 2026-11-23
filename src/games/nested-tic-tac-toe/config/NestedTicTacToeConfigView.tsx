@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { MatchSeatEntry } from '@/components/game/MatchSeatSetup/MatchSeatSetup'
 import { PlayerBadge } from '@/components/game/PlayerBadge/PlayerBadge'
 import { TwoSeatMatchConfigView } from '@/components/game/TwoSeatMatchConfig/TwoSeatMatchConfig'
@@ -13,6 +14,7 @@ import {
 } from './match-config'
 
 export interface NestedTicTacToeConfigViewProps {
+  readonly header: ReactNode
   readonly onStart: (payload: {
     readonly config: NestedTicTacToeMatchConfig
     readonly save: string
@@ -40,19 +42,14 @@ const SEATS: readonly [
   },
 ]
 
-const SIDE_OPTIONS: readonly { readonly id: NestedTicTacToeSide; readonly label: string }[] = [
-  { id: 'red', label: '执红' },
-  { id: 'blue', label: '执蓝' },
-]
-
-export function NestedTicTacToeConfigView({ onStart }: NestedTicTacToeConfigViewProps) {
+export function NestedTicTacToeConfigView({
+  header,
+  onStart,
+}: NestedTicTacToeConfigViewProps) {
   return (
     <TwoSeatMatchConfigView<NestedTicTacToeSide>
+      header={header}
       seats={SEATS}
-      sideOptions={SIDE_OPTIONS}
-      sideLabel="你的执子"
-      sideHint="红方固定先手；选择后该方为真人、另一方为 AI，也可以在上方席位自由调整。"
-      randomSideLabel="随机执子"
       rulesSummary={NESTED_TIC_TAC_TOE_RULES_SUMMARY}
       onStart={(config) => {
         const game = createNestedTicTacToeGame()

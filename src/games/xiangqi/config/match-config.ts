@@ -1,15 +1,15 @@
 import { z } from 'zod'
-import { refineSeatConfig, seatTypeSchema } from '@/presentation/match-setup/schema'
+import { refineSeatConfig, seatNameSchema, seatTypeSchema } from '@/presentation/match-setup/schema'
 import type { SeatMatchConfig } from '@/presentation/match-setup/types'
 import { XIANGQI_SIDES } from '../domain/types'
 
-/** 一局中国象棋的配置；席位可任意组合真人 / AI，与局面快照一起持久化。 */
+/** 一局中国象棋的配置；席位可任意组合接入方式，与局面快照一起持久化。 */
 export type XiangqiMatchConfig = SeatMatchConfig<(typeof XIANGQI_SIDES)[number]>
 
 export const DEFAULT_XIANGQI_MATCH_CONFIG: XiangqiMatchConfig = {
   seats: [
     { id: 'red', type: 'human' },
-    { id: 'black', type: 'ai' },
+    { id: 'black', type: 'algorithm' },
   ],
   youSeat: 'red',
 }
@@ -18,7 +18,7 @@ const sideSchema = z.enum(XIANGQI_SIDES)
 
 export const xiangqiMatchConfigSchema = z
   .object({
-    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema })).length(2),
+    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema, name: seatNameSchema })).length(2),
     youSeat: sideSchema.nullable(),
   })
   .superRefine((config, ctx) => {

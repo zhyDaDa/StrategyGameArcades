@@ -30,6 +30,7 @@ import {
   type NestedTicTacToeViewMessage,
 } from '@/games/nested-tic-tac-toe/ui/nested-tic-tac-toe-view-model'
 import { useGameMatch, type MatchPlayer } from '@/presentation/hooks/useGameMatch'
+import { assertSeatPlayable } from '@/presentation/match-setup/seat-runtime'
 import { gameConfigPath, useRouter } from '@/routers'
 import { readStoredMatch, saveStoredMatch } from '../../match-storage'
 
@@ -266,6 +267,7 @@ function createSeats(config: NestedTicTacToeMatchConfig): NestedSeats {
       humans.set(seat.id, human)
       players.set(seat.id, { controller: human, role: 'human', undoPolicy: 'ask' })
     } else {
+      assertSeatPlayable(seat)
       const ai = new NestedTicTacToeHeuristicController(seat.id)
       players.set(seat.id, { controller: ai, role: 'bot', undoPolicy: 'accept' })
     }

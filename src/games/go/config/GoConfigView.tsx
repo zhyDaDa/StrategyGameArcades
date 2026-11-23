@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { StoneBadge } from '@/components/game/StoneBadge/StoneBadge'
 import type { MatchSeatEntry } from '@/components/game/MatchSeatSetup/MatchSeatSetup'
 import { TwoSeatMatchConfigView } from '@/components/game/TwoSeatMatchConfig/TwoSeatMatchConfig'
@@ -6,6 +7,7 @@ import type { GoSide } from '../domain/types'
 import { GO_RULES_SUMMARY, type GoMatchConfig } from './match-config'
 
 export interface GoConfigViewProps {
+  readonly header: ReactNode
   readonly onStart: (payload: { readonly config: GoMatchConfig; readonly save: string }) => void
 }
 
@@ -24,19 +26,11 @@ const SEATS: readonly [MatchSeatEntry<GoSide>, MatchSeatEntry<GoSide>] = [
   },
 ]
 
-const SIDE_OPTIONS: readonly { readonly id: GoSide; readonly label: string }[] = [
-  { id: 'black', label: '执黑' },
-  { id: 'white', label: '执白' },
-]
-
-export function GoConfigView({ onStart }: GoConfigViewProps) {
+export function GoConfigView({ header, onStart }: GoConfigViewProps) {
   return (
     <TwoSeatMatchConfigView<GoSide>
+      header={header}
       seats={SEATS}
-      sideOptions={SIDE_OPTIONS}
-      sideLabel="你的执子"
-      sideHint="选择后该方为真人、另一方为 AI；也可以在上方席位自由调整，包括 AI 对 AI。"
-      randomSideLabel="随机执子"
       rulesSummary={GO_RULES_SUMMARY}
       onStart={(config) => {
         const game = new GoGame()

@@ -30,15 +30,3 @@ export function pickRandomSeat<S extends string>(ids: readonly S[]): S {
   }
   return ids[Math.floor(Math.random() * ids.length)]
 }
-
-/** 快速执子：所选席位设为真人，其余席位设为 AI；随机选项在配置期立即解析。 */
-export function applySidePreset<S extends string>(
-  ids: readonly S[],
-  choice: S | 'random',
-): { readonly seats: readonly SeatAssignment<S>[]; readonly youSeat: S } {
-  const chosen = choice === 'random' ? pickRandomSeat(ids) : choice
-  return {
-    seats: ids.map((id) => ({ id, type: id === chosen ? 'human' : 'ai' })),
-    youSeat: chosen,
-  }
-}

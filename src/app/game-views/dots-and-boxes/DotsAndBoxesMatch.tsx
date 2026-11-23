@@ -32,6 +32,7 @@ import {
   type DotsViewMessage,
 } from '@/games/dots-and-boxes/ui/dots-and-boxes-view-model'
 import { useGameMatch, type MatchPlayer } from '@/presentation/hooks/useGameMatch'
+import { assertSeatPlayable } from '@/presentation/match-setup/seat-runtime'
 import { gameConfigPath, useRouter } from '@/routers'
 import { readStoredMatch, saveStoredMatch } from '../../match-storage'
 
@@ -281,6 +282,7 @@ function createSeats(config: DotsAndBoxesMatchConfig): DotsSeats {
       humans.set(seat.id, human)
       players.set(seat.id, { controller: human, role: 'human', undoPolicy: 'ask' })
     } else {
+      assertSeatPlayable(seat)
       const ai = new DotsAndBoxesRandomController(seat.id)
       players.set(seat.id, { controller: ai, role: 'bot', undoPolicy: 'accept' })
     }

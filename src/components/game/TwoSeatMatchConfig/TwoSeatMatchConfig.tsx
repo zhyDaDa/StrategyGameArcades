@@ -1,89 +1,145 @@
+import { useState, type ReactNode } from 'react'
+import { ConfigDeck } from '@/components/game/ConfigDeck/ConfigDeck'
 import { MatchConfigLayout } from '@/components/game/MatchConfigLayout/MatchConfigLayout'
 import {
   MatchSeatSetup,
   type MatchSeatEntry,
 } from '@/components/game/MatchSeatSetup/MatchSeatSetup'
+import { SeatConfigPanel } from '@/components/game/SeatConfigPanel/SeatConfigPanel'
+import {
+  EMPTY_SEAT_DRAFT,
+  type SeatDraft,
+} from '@/components/game/SeatConfigPanel/seat-draft'
+import { SEAT_ACCENT_CLASS, SEAT_KIND_META } from '@/presentation/match-setup/seat-kinds'
 import { useSeatSetup } from '@/presentation/match-setup/useSeatSetup'
-import type { SeatMatchConfig } from '@/presentation/match-setup/types'
+import type { SeatMatchConfig, SeatType } from '@/presentation/match-setup/types'
 
 export interface TwoSeatMatchConfigViewProps<S extends string> {
+  /** 页面标题区；由配置路由传入，随整页一起翻走。 */
+  readonly header: ReactNode
   readonly seats: readonly [MatchSeatEntry<S>, MatchSeatEntry<S>]
-  readonly sideOptions: readonly { readonly id: S; readonly label: string }[]
-  readonly sideLabel: string
-  readonly sideHint: string
-  readonly randomSideLabel: string
   readonly rulesSummary: string
   readonly onStart: (config: SeatMatchConfig<S>) => void
 }
 
 /**
- * 双席位对局配置：席位可独立设为玩家 / AI（允许 AI 对 AI），
- * 另有「执子」快捷选择，用来快速指定本方席位并把对手设为 AI。
+ * 双席位对局配置：主页只展示席位概览与开局入口，
+ * 具体席位设置通过整页翻页进入独立的玩家配置页。
  */
 export function TwoSeatMatchConfigView<S extends string>({
+  header,
   seats,
-  sideOptions,
-  sideLabel,
-  sideHint,
-  randomSideLabel,
   rulesSummary,
   onStart,
 }: TwoSeatMatchConfigViewProps<S>) {
   const setup = useSeatSetup({
     seatIds: seats.map((seat) => seat.id),
-    defaultHumanSeat: seats[0].id,
+    defaultYouSeat: seats[0].id,
   })
-  const typeById = new Map(setup.seats.map((seat) => [seat.id, seat.type]))
-  const humanCount = setup.seats.filter((seat) => seat.type === 'human').length
+  const [activeSeatId, setActiveSeatId] = useState<S | null>(null)
+  const [lastSeatId, setLastSeatId] = useState<S | null>(null)
+  const [drafts, setDrafts] = useState<Record<string, SeatDraft>>({})
 
-  function start() {
-    onStart({ seats: setup.seats, youSeat: setup.youSeat })
+  const byId = new Map(setup.seats.map((seat) => [seat.id, seat]))
+  const humanCount = setup.seats.filter((seat) => seat.type === 'human').length
+  const unplayable = setup.seats.filter((seat) => !SEAT_KIND_META[seat.type].playable)
+  const lastSeat = seats.find((seat) => seat.id === lastSeatId)
+  const lastAssignment = lastSeatId === null ? undefined : byId.get(lastSeatId)
+  const draft = lastSeatId === null ? EMPTY_SEAT_DRAFT : drafts[lastSeatId] ?? EMPTY_SEAT_DRAFT
+
+  function openSeat(id: S) {
+    setLastSeatId(id)
+    setActiveSeatId(id)
   }
 
-  return (
-    <MatchConfigLayout
-      onStart={start}
-      startLabel={humanCount === 0 ? '开始观战' : '开始对局'}
-      summary={
-        <div className="flex flex-col gap-1">
-          <p className="text-sm">
-            {humanCount === 0
-              ? 'AI 对 AI · 自动对弈'
-              : `${humanCount} 位真人 · ${seats.length - humanCount} 位 AI`}
-          </p>
-          <ul className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
-            {seats.map((seat) => (
-              <li key={seat.id}>
-                {seat.label} ·{' '}
-                {typeById.get(seat.id) === 'ai'
-                  ? 'AI'
-                  : setup.youSeat === seat.id
-                    ? '你'
-                    : '本机玩家'}
-              </li>
-            ))}
-          </ul>
-        </div>
-      }
-    >
-      <MatchSeatSetup
-        seats={seats}
-        assignments={setup.seats}
-        youSeat={setup.youSeat}
-        onSeatTypeChange={setup.setSeatType}
-        onYouSeatChange={setup.setYouSeat}
-        sideChoice={{
-          label: sideLabel,
-          hint: sideHint,
-          options: sideOptions,
-          randomLabel: randomSideLabel,
-          onSelect: setup.applyYourSide,
-        }}
-      />
+  function closeSeat() {
+    setActiveSeatId(null)
+  }
 
-      <div className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">
-        {rulesSummary}
-      </div>
-    </MatchConfigLayout>
+  function updateDraft(id: S, patch: Partial<SeatDraft>) {
+    setDrafts((current) => ({
+      ...current,
+      [id]: { ...(current[id] ?? EMPTY_SEAT_DRAFT), ...patch },
+    }))
+  }
+
+  const summary = (
+    <div className="flex flex-col gap-1">
+      <p className="text-sm">
+        {humanCount === 0
+          ? '全自动对弈'
+          : `${humanCount} 位真人 · ${seats.length - humanCount} 个非人类席位`}
+      </p>
+      <ul className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
+        {seats.map((seat) => {
+          const assignment = byId.get(seat.id)
+          if (assignment === undefined) {
+            return null
+          }
+          const meta = SEAT_KIND_META[assignment.type]
+          const accent = SEAT_ACCENT_CLASS[meta.accent]
+          return (
+            <li key={seat.id} className="flex items-center gap-1.5">
+              <span>{seat.label}</span>
+              <span>·</span>
+              <span className={accent.text}>{assignment.name ?? meta.label}</span>
+              {setup.youSeat === seat.id ? <span>（房主）</span> : null}
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
+
+  const main = (
+    <div className="flex flex-col gap-10">
+      {header}
+      <MatchConfigLayout
+        onStart={() => onStart({ seats: setup.seats, youSeat: setup.youSeat })}
+        startLabel={humanCount === 0 ? '观看对局' : '开始对局'}
+        startDisabled={unplayable.length > 0}
+        summary={summary}
+        footer={
+          unplayable.length > 0 ? (
+            <p className="text-xs text-destructive">
+              {unplayable.map((seat) => SEAT_KIND_META[seat.type].label).join(' / ')}
+              接入尚未接通；先把这些席位换成人类或算法再开局。
+            </p>
+          ) : undefined
+        }
+      >
+        <MatchSeatSetup
+          seats={seats}
+          assignments={setup.seats}
+          youSeat={setup.youSeat}
+          onConfigure={openSeat}
+        />
+
+        <div className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">
+          {rulesSummary}
+        </div>
+      </MatchConfigLayout>
+    </div>
+  )
+
+  const panel =
+    lastSeat !== undefined && lastAssignment !== undefined ? (
+      <SeatConfigPanel<S>
+        key={lastSeat.id}
+        seat={lastSeat}
+        assignment={lastAssignment}
+        isHost={setup.youSeat === lastSeat.id}
+        draft={draft}
+        onTypeChange={(type: SeatType) => setup.setSeatType(lastSeat.id, type)}
+        onNameChange={(name) => setup.setSeatName(lastSeat.id, name)}
+        onMakeHost={() => {
+          setup.setSeatType(lastSeat.id, 'human')
+          setup.setYouSeat(lastSeat.id)
+        }}
+        onDraftChange={(patch) => updateDraft(lastSeat.id, patch)}
+        onClose={closeSeat}
+      />
+    ) : null
+
+  return <ConfigDeck open={activeSeatId !== null} main={main} panel={panel} />
 }

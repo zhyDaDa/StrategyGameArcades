@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { MatchSeatEntry } from '@/components/game/MatchSeatSetup/MatchSeatSetup'
 import { TwoSeatMatchConfigView } from '@/components/game/TwoSeatMatchConfig/TwoSeatMatchConfig'
 import { ChessGame } from '../domain/ChessGame'
@@ -6,6 +7,7 @@ import { ChessSideBadge } from '../ui/ChessSideBadge'
 import { CHESS_RULES_SUMMARY, type ChessMatchConfig } from './match-config'
 
 export interface ChessConfigViewProps {
+  readonly header: ReactNode
   readonly onStart: (payload: {
     readonly config: ChessMatchConfig
     readonly save: string
@@ -27,19 +29,11 @@ const SEATS: readonly [MatchSeatEntry<ChessSide>, MatchSeatEntry<ChessSide>] = [
   },
 ]
 
-const SIDE_OPTIONS: readonly { readonly id: ChessSide; readonly label: string }[] = [
-  { id: 'white', label: '执白' },
-  { id: 'black', label: '执黑' },
-]
-
-export function ChessConfigView({ onStart }: ChessConfigViewProps) {
+export function ChessConfigView({ header, onStart }: ChessConfigViewProps) {
   return (
     <TwoSeatMatchConfigView<ChessSide>
+      header={header}
       seats={SEATS}
-      sideOptions={SIDE_OPTIONS}
-      sideLabel="你的执子"
-      sideHint="选择后该方为真人、另一方为 AI；也可以在上方席位自由调整，包括 AI 对 AI。"
-      randomSideLabel="随机执子"
       rulesSummary={CHESS_RULES_SUMMARY}
       onStart={(config) => {
         const game = new ChessGame()

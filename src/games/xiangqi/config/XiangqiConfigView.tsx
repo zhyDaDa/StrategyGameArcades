@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { MatchSeatEntry } from '@/components/game/MatchSeatSetup/MatchSeatSetup'
 import { TwoSeatMatchConfigView } from '@/components/game/TwoSeatMatchConfig/TwoSeatMatchConfig'
 import { XiangqiGame } from '../domain/XiangqiGame'
@@ -6,6 +7,7 @@ import { XiangqiSideBadge } from '../ui/XiangqiSideBadge'
 import { XIANGQI_RULES_SUMMARY, type XiangqiMatchConfig } from './match-config'
 
 export interface XiangqiConfigViewProps {
+  readonly header: ReactNode
   readonly onStart: (payload: {
     readonly config: XiangqiMatchConfig
     readonly save: string
@@ -27,19 +29,11 @@ const SEATS: readonly [MatchSeatEntry<XiangqiSide>, MatchSeatEntry<XiangqiSide>]
   },
 ]
 
-const SIDE_OPTIONS: readonly { readonly id: XiangqiSide; readonly label: string }[] = [
-  { id: 'red', label: '执红' },
-  { id: 'black', label: '执黑' },
-]
-
-export function XiangqiConfigView({ onStart }: XiangqiConfigViewProps) {
+export function XiangqiConfigView({ header, onStart }: XiangqiConfigViewProps) {
   return (
     <TwoSeatMatchConfigView<XiangqiSide>
+      header={header}
       seats={SEATS}
-      sideOptions={SIDE_OPTIONS}
-      sideLabel="你的执子"
-      sideHint="选择后该方为真人、另一方为 AI；也可以在上方席位自由调整，包括 AI 对 AI。"
-      randomSideLabel="随机执子"
       rulesSummary={XIANGQI_RULES_SUMMARY}
       onStart={(config) => {
         const game = new XiangqiGame()

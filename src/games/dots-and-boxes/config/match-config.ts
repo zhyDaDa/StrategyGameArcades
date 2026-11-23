@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { refineSeatConfig, seatTypeSchema } from '@/presentation/match-setup/schema'
+import { refineSeatConfig, seatNameSchema, seatTypeSchema } from '@/presentation/match-setup/schema'
 import type { SeatMatchConfig } from '@/presentation/match-setup/types'
 import { DotsAndBoxesGame } from '../domain/DotsAndBoxesGame'
 import {
@@ -22,7 +22,7 @@ export const DEFAULT_DOTS_MATCH_CONFIG: DotsAndBoxesMatchConfig = {
   boxSize: 12,
   seats: [
     { id: 'red', type: 'human' },
-    { id: 'blue', type: 'ai' },
+    { id: 'blue', type: 'algorithm' },
   ],
   youSeat: 'red',
   firstPlayer: 'red',
@@ -34,7 +34,7 @@ export const dotsMatchConfigSchema = z
   .object({
     boxSize: z.union([z.literal(8), z.literal(12), z.literal(15), z.literal(18)]),
     seats: z
-      .array(z.object({ id: seatIdSchema, type: seatTypeSchema }))
+      .array(z.object({ id: seatIdSchema, type: seatTypeSchema, name: seatNameSchema }))
       .min(2)
       .max(DOTS_AND_BOXES_SEATS.length),
     youSeat: seatIdSchema.nullable(),

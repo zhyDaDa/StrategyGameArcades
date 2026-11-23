@@ -6,6 +6,7 @@ export interface MatchConfigLayoutProps {
   readonly onStart: () => void
   readonly children: ReactNode
   readonly startLabel?: string
+  readonly startDisabled?: boolean
   readonly footer?: ReactNode
 }
 
@@ -15,6 +16,7 @@ export function MatchConfigLayout({
   onStart,
   children,
   startLabel = '开始对局',
+  startDisabled = false,
   footer,
 }: MatchConfigLayoutProps) {
   return (
@@ -28,7 +30,7 @@ export function MatchConfigLayout({
           </p>
           {summary}
         </div>
-        <Button size="lg" onClick={onStart}>
+        <Button size="lg" onClick={onStart} disabled={startDisabled}>
           {startLabel}
         </Button>
         {footer ?? (

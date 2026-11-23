@@ -1,5 +1,6 @@
 import type { PendingUndo } from '@/core/session/GameSession'
-import type { SeatAssignment } from '@/presentation/match-setup/types'
+import { SEAT_KIND_META } from '@/presentation/match-setup/seat-kinds'
+import type { SeatAssignment, SeatType } from '@/presentation/match-setup/types'
 import { isDotsAndBoxesSeat } from '../domain/rules'
 import { selectScores, selectStandings, type DotsBoardViewModel } from '../domain/selectors'
 import type {
@@ -68,13 +69,14 @@ export function buildSeatNames(
     green: DOTS_SEAT_META.green.label,
     yellow: DOTS_SEAT_META.yellow.label,
   }
-  let aiCount = 0
+  const counts: Partial<Record<SeatType, number>> = {}
   seats.forEach((seat, index) => {
-    if (seat.type === 'ai') {
-      aiCount += 1
-      names[seat.id] = `AI ${aiCount}`
+    if (seat.type !== 'human') {
+      const count = (counts[seat.type] ?? 0) + 1
+      counts[seat.type] = count
+      names[seat.id] = `${SEAT_KIND_META[seat.type].label} ${count}`
     } else {
-      names[seat.id] = seat.id === youSeat ? '你' : `玩家 ${index + 1}`
+      names[seat.id] = seat.name ?? (seat.id === youSeat ? '你' : `玩家 ${index + 1}`)
     }
   })
   return names

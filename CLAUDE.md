@@ -14,7 +14,7 @@
 ### 开工前：先找，再写
 
 1. 阅读本文件和与任务有关的 `docs/` 文档；观察现有代码风格。
-2. 搜索已有 **类型、基类、Selector、Controller、Motion preset、Less token、通用组件**。
+2. 搜索已有 **类型、基类、Selector、Controller、Motion preset、公共缓动/弹簧 token、Less token、通用组件**。
 3. 判断需求归属：`core / systems / controllers / presentation / components / games/<id> / app`。
 4. 能组合已有能力就不要新增抽象；仅为一个游戏特有的逻辑，留在该游戏内。
 5. 预计要触碰公共协议时，先说明：**为什么现有能力不够、影响哪些游戏、怎样验证兼容性**。
@@ -534,6 +534,16 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 - 五子棋：落点清晰、轻微接触回弹、最后落子标识；输赢演出克制而有仪式感。
 - 黑白棋：翻面连续而可辨；象棋：移动有重量与空间方向；卡牌：层次、遮挡、弧线与翻面。
 - 背景演出不能盖过行动作反馈；低性能设备与无障碍配置下可降级。
+
+### 7.5 公共动效资产必须复用
+
+缓动曲线、时长、弹簧参数是**产品级动画资产**，不是某个页面或某款游戏的一次性实现：
+
+- **唯一真源**：`presentation/motion/tokens.ts` 定义时长、`ease.*` 贝塞尔曲线与 `spring.*` 弹簧；`presentation/motion/presets.ts` 存放可直接套用的入场/退场/过渡组合。页面、通用组件、各游戏一律从这里 import。
+- **写之前先搜**：任何 `ease: [...]`、`duration: 0.x`、`spring` 配置落笔前，先检查 tokens/presets 是否已有对应语义；有就复用，没有才新增。禁止把同一条贝塞尔数组复制到 `games/<id>/motion/timings.ts`。
+- **按运动语义命名，而不是按外观**。同一个语义在全站必须共用同一条曲线与时长。例如「标识当前玩家 / 可落区域的位置衬底在格子或行之间移动」是同一类语义（travel/slab）；「缩略图、棋子等元素弹入」共用 `spring.pop`。不要让两款游戏各自发明一条“差不多”的曲线。
+- `games/<id>/motion/timings.ts` 只放该游戏**独有**的节奏差异，曲线仍引用 tokens；它不得成为第二份曲线真源。
+- 新增公共资产的准入：至少有两个真实使用场景且语义一致；新增时在 tokens 中写明用途，避免下一个人再重复造一条。
 
 ---
 

@@ -7,6 +7,7 @@ import { Link, gamePath, useRouter } from '@/routers'
 /**
  * 通用配置路由页：取 gameId、找到游戏专属配置视图，
  * 开始游戏时把「配置 + 初始快照」写入 localStorage，再进入对局页。
+ * 标题区作为 header 交给配置视图，使其与配置内容一起参与整页翻页。
  */
 export function GameConfigPage() {
   const { match, navigate } = useRouter()
@@ -40,8 +41,8 @@ export function GameConfigPage() {
     }
   }
 
-  return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-6 py-16">
+  const header = (
+    <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-3 border-b pb-8">
         <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground">
           GAME / 对局配置
@@ -58,16 +59,23 @@ export function GameConfigPage() {
           无法保存本局配置：{startError}
         </p>
       ) : null}
+    </div>
+  )
 
+  return (
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-6 py-16">
       {ConfigView === undefined ? (
-        <section className="flex flex-col gap-3 rounded-xl border border-dashed p-10 text-sm text-muted-foreground">
-          <p>{currentGame.name} 的配置页尚未接入。</p>
-          <Link to={gamePath(currentGame.id)} className="w-fit underline underline-offset-4">
-            进入游戏页
-          </Link>
-        </section>
+        <>
+          {header}
+          <section className="flex flex-col gap-3 rounded-xl border border-dashed p-10 text-sm text-muted-foreground">
+            <p>{currentGame.name} 的配置页尚未接入。</p>
+            <Link to={gamePath(currentGame.id)} className="w-fit underline underline-offset-4">
+              进入游戏页
+            </Link>
+          </section>
+        </>
       ) : (
-        <ConfigView onStart={handleStart} />
+        <ConfigView header={header} onStart={handleStart} />
       )}
     </main>
   )

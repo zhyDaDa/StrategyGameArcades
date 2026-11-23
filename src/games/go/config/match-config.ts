@@ -1,15 +1,15 @@
 import { z } from 'zod'
-import { refineSeatConfig, seatTypeSchema } from '@/presentation/match-setup/schema'
+import { refineSeatConfig, seatNameSchema, seatTypeSchema } from '@/presentation/match-setup/schema'
 import type { SeatMatchConfig } from '@/presentation/match-setup/types'
 import { GoSide } from '../domain/types'
 
-/** 一局围棋的配置；席位可任意组合真人 / AI，与局面快照一起持久化。 */
+/** 一局围棋的配置；席位可任意组合接入方式，与局面快照一起持久化。 */
 export type GoMatchConfig = SeatMatchConfig<GoSide>
 
 export const DEFAULT_GO_MATCH_CONFIG: GoMatchConfig = {
   seats: [
     { id: 'black', type: 'human' },
-    { id: 'white', type: 'ai' },
+    { id: 'white', type: 'algorithm' },
   ],
   youSeat: 'black',
 }
@@ -18,7 +18,7 @@ const sideSchema = z.enum(GoSide)
 
 export const goMatchConfigSchema = z
   .object({
-    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema })).length(2),
+    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema, name: seatNameSchema })).length(2),
     youSeat: sideSchema.nullable(),
   })
   .superRefine((config, ctx) => {

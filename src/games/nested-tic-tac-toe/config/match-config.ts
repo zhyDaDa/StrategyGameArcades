@@ -1,16 +1,16 @@
 import { z } from 'zod'
-import { refineSeatConfig, seatTypeSchema } from '@/presentation/match-setup/schema'
+import { refineSeatConfig, seatNameSchema, seatTypeSchema } from '@/presentation/match-setup/schema'
 import type { SeatMatchConfig } from '@/presentation/match-setup/types'
 import { NestedTicTacToeGame } from '../domain/NestedTicTacToeGame'
 import { NESTED_SIDES, type NestedTicTacToeSide } from '../domain/types'
 
-/** 一局九宫井字棋的配置；席位可任意组合真人 / AI，红方固定先手。 */
+/** 一局九宫井字棋的配置；席位可任意组合接入方式，红方固定先手。 */
 export type NestedTicTacToeMatchConfig = SeatMatchConfig<NestedTicTacToeSide>
 
 export const DEFAULT_NESTED_MATCH_CONFIG: NestedTicTacToeMatchConfig = {
   seats: [
     { id: 'red', type: 'human' },
-    { id: 'blue', type: 'ai' },
+    { id: 'blue', type: 'algorithm' },
   ],
   youSeat: 'red',
 }
@@ -19,7 +19,7 @@ const sideSchema = z.enum(NESTED_SIDES)
 
 export const nestedTicTacToeMatchConfigSchema = z
   .object({
-    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema })).length(2),
+    seats: z.array(z.object({ id: sideSchema, type: seatTypeSchema, name: seatNameSchema })).length(2),
     youSeat: sideSchema.nullable(),
   })
   .superRefine((config, ctx) => {

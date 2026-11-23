@@ -21,44 +21,44 @@ import type { GameViewEntry } from './types'
  */
 export const GAME_VIEWS: Partial<Record<GameId, GameViewEntry>> = {
   gomoku: {
-    Config: ({ onStart }) => (
-      <GomokuConfigView onStart={(payload) => onStart(payload)} />
+    Config: ({ header, onStart }) => (
+      <GomokuConfigView header={header} onStart={(payload) => onStart(payload)} />
     ),
     Match: GomokuMatch,
   },
   go: {
-    Config: ({ onStart }) => (
-      <GoConfigView onStart={(payload) => onStart(payload)} />
+    Config: ({ header, onStart }) => (
+      <GoConfigView header={header} onStart={(payload) => onStart(payload)} />
     ),
     Match: GoMatch,
   },
   reversi: {
-    Config: ({ onStart }) => (
-      <ReversiConfigView onStart={(payload) => onStart(payload)} />
+    Config: ({ header, onStart }) => (
+      <ReversiConfigView header={header} onStart={(payload) => onStart(payload)} />
     ),
     Match: ReversiMatch,
   },
   xiangqi: {
-    Config: ({ onStart }) => (
-      <XiangqiConfigView onStart={(payload) => onStart(payload)} />
+    Config: ({ header, onStart }) => (
+      <XiangqiConfigView header={header} onStart={(payload) => onStart(payload)} />
     ),
     Match: XiangqiMatch,
   },
   chess: {
-    Config: ({ onStart }) => (
-      <ChessConfigView onStart={(payload) => onStart(payload)} />
+    Config: ({ header, onStart }) => (
+      <ChessConfigView header={header} onStart={(payload) => onStart(payload)} />
     ),
     Match: ChessMatch,
   },
   'dots-and-boxes': {
-    Config: ({ onStart }) => (
-      <DotsAndBoxesConfigView onStart={(payload) => onStart(payload)} />
+    Config: ({ header, onStart }) => (
+      <DotsAndBoxesConfigView header={header} onStart={(payload) => onStart(payload)} />
     ),
     Match: DotsAndBoxesMatch,
   },
   'nested-tic-tac-toe': {
-    Config: ({ onStart }) => (
-      <NestedTicTacToeConfigView onStart={(payload) => onStart(payload)} />
+    Config: ({ header, onStart }) => (
+      <NestedTicTacToeConfigView header={header} onStart={(payload) => onStart(payload)} />
     ),
     Match: NestedTicTacToeMatch,
   },
