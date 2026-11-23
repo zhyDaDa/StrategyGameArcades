@@ -1,4 +1,3 @@
-import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,7 +28,8 @@ export interface SeatConfigPanelProps<S extends string> {
 
 /**
  * 单个席位的玩家配置页：左侧选择接入方式，右侧编辑该方式的配置。
- * 接入方式的选择立即写回席位状态，关闭后主页上的席位卡片同步更新。
+ * 整页固定为可用高度，左侧竖线不随右侧内容长短伸缩；
+ * 只有底部的「保存配置」会返回主配置页，避免未确认就离开。
  */
 export function SeatConfigPanel<S extends string>({
   seat,
@@ -53,11 +53,8 @@ export function SeatConfigPanel<S extends string>({
   }
 
   return (
-    <section className="flex min-h-full flex-col gap-6">
-      <header className="flex items-center gap-4 border-b pb-6">
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label="返回对局配置">
-          <ArrowLeft />
-        </Button>
+    <section className="flex h-full min-h-0 flex-col">
+      <header className="flex shrink-0 items-center gap-4 border-b pb-6">
         <div className="shrink-0">{seat.badge}</div>
         <div className="flex min-w-0 flex-col">
           <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground">
@@ -80,10 +77,10 @@ export function SeatConfigPanel<S extends string>({
         </span>
       </header>
 
-      <div className="grid flex-1 gap-8 lg:grid-cols-[14rem_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 gap-8 lg:grid-cols-[14rem_minmax(0,1fr)]">
         <SeatConfigTabs activeType={activeType} onChange={changeType} />
 
-        <div className="min-w-0">
+        <div className="scroll-area min-h-0 min-w-0 overflow-y-auto py-6">
           <h3 className="mb-4 text-base font-semibold tracking-tight">
             {meta.label}
             <span className="ml-2 font-normal text-muted-foreground">{meta.description}</span>
@@ -107,8 +104,8 @@ export function SeatConfigPanel<S extends string>({
         </div>
       </div>
 
-      <footer className="flex justify-end border-t pt-4">
-        <Button onClick={onClose}>完成配置</Button>
+      <footer className="flex shrink-0 justify-end border-t pt-4">
+        <Button onClick={onClose}>保存配置</Button>
       </footer>
     </section>
   )

@@ -24,7 +24,7 @@ export function SeatConfigTabs({ activeType, onChange }: SeatConfigTabsProps) {
   const activeAccent = SEAT_ACCENT_CLASS[SEAT_KIND_META[activeType].accent]
 
   return (
-    <nav aria-label="接入方式" className="relative">
+    <nav aria-label="接入方式" className="relative py-6">
       <ul className="flex flex-col">
         {SEAT_TYPES.map((type) => {
           const meta = SEAT_KIND_META[type]
@@ -74,7 +74,7 @@ export function SeatConfigTabs({ activeType, onChange }: SeatConfigTabsProps) {
       <div
         aria-hidden="true"
         className={[
-          'pointer-events-none absolute inset-y-0 right-0 z-0 w-[3px] rounded-full transition-colors duration-300 ease-out',
+          'pointer-events-none absolute inset-y-6 right-0 z-0 w-[3px] rounded-full transition-colors duration-500 ease-in-out',
           activeAccent.dot,
         ].join(' ')}
       />
@@ -85,14 +85,14 @@ export function SeatConfigTabs({ activeType, onChange }: SeatConfigTabsProps) {
         initial={false}
         animate={{ y: activeIndex * TAB_ROW_HEIGHT }}
         transition={motionTokens.transition.travel}
-        className="pointer-events-none absolute right-0 top-0 z-10 h-18 w-0"
+        className="pointer-events-none absolute right-0 top-6 z-10 h-18 w-0"
       >
         <svg
           width="14"
           height="20"
           viewBox="0 0 14 20"
           className={[
-            'absolute right-0 top-1/2 -translate-y-1/2 transition-colors duration-300 ease-out',
+            'absolute right-0 top-1/2 -translate-y-1/2 transition-colors duration-500 ease-in-out',
             activeAccent.text,
           ].join(' ')}
           fill="none"

@@ -23,17 +23,25 @@ export function ConfigDeck({ open, main, panel }: ConfigDeckProps) {
      * 子树内忽略系统偏好；站内其余页面仍遵循全局 MotionConfig。
      */
     <MotionConfig reducedMotion="never">
-      <div className="relative overflow-hidden">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         <motion.div
-          className="flex w-[200%] items-stretch"
+          className="flex h-full w-[200%] items-stretch"
           initial={false}
           animate={{ x: open ? '-50%' : '0%' }}
           transition={motionTokens.transition.travel}
         >
-          <div className="w-1/2 shrink-0" inert={open} aria-hidden={open}>
+          <div
+            className="scroll-area h-full w-1/2 shrink-0 overflow-y-auto"
+            inert={open}
+            aria-hidden={open}
+          >
             {main}
           </div>
-          <div className="w-1/2 shrink-0" inert={!open} aria-hidden={!open}>
+          <div
+            className="h-full w-1/2 shrink-0 overflow-hidden"
+            inert={!open}
+            aria-hidden={!open}
+          >
             {panel}
           </div>
         </motion.div>
