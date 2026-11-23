@@ -1,6 +1,13 @@
-import { useCallback, useReducer, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useReducer, useState, useSyncExternalStore } from 'react'
+import { AiProfileEditor, AiProfileManager } from '@/components/ai/AiProfileManager'
+import { emptyProfileDraft, toProfileDraft } from '@/presentation/ai/profile-form'
+import { ConfigDeck } from '@/components/game/ConfigDeck/ConfigDeck'
 import { Button } from '@/components/ui/button'
 import { credentialStore } from '@/presentation/ai/credential-store'
+import {
+  clearProfileCredentials,
+  type AiProfileDraft,
+} from '@/presentation/ai/profiles'
 import { clearAllStrategies, countStrategies } from '@/presentation/ai/strategy-library'
 import { THEME_MODES, useTheme, type ThemeMode } from '@/presentation/theme'
 
@@ -19,8 +26,19 @@ export function SettingsPage() {
   const remembered = credentials.filter((entry) => entry.remembered).length
   const strategyCount = countStrategies()
 
-  return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-6 py-12">
+  const [editing, setEditing] = useState<AiProfileDraft | null>(() => {
+    const autoCreate = new URLSearchParams(window.location.search).get('new') === 'profile'
+    return autoCreate ? emptyProfileDraft() : null
+  })
+
+  useEffect(() => {
+    if (window.location.hash === '#ai-profiles' && editing === null) {
+      document.getElementById('ai-profiles')?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [editing])
+
+  const settingsMain = (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-2 py-12">
       <header className="flex flex-col gap-3 border-b pb-8">
         <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground">
           SETTINGS / 设置
@@ -50,6 +68,11 @@ export function SettingsPage() {
         </div>
       </section>
 
+      <AiProfileManager
+        onCreate={() => setEditing(emptyProfileDraft())}
+        onEdit={(profile) => setEditing(toProfileDraft(profile))}
+      />
+
       <section className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <h2 className="text-base font-semibold tracking-tight">AI 凭据</h2>
@@ -65,6 +88,7 @@ export function SettingsPage() {
             onClick={() => {
               if (window.confirm('清空全部 AI 凭据？引用这些凭据的席位将无法行动，直到重新配置。')) {
                 credentialStore.clearAll()
+                clearProfileCredentials()
               }
             }}
           >
@@ -99,6 +123,26 @@ export function SettingsPage() {
           </Button>
         </div>
       </section>
+    </div>
+  )
+
+  return (
+    <main className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-1 flex-col px-6">
+      <ConfigDeck
+        open={editing !== null}
+        main={settingsMain}
+        panel={
+          editing === null ? null : (
+            <div className="h-full px-2 py-8">
+              <AiProfileEditor
+                draft={editing}
+                onChange={(next) => setEditing(next)}
+                onClose={() => setEditing(null)}
+              />
+            </div>
+          )
+        }
+      />
     </main>
   )
 }

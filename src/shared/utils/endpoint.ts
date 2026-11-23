@@ -37,7 +37,7 @@ export function checkEndpoint(value: string, options: { readonly allowPath: bool
   if (!options.allowPath && /\/(chat\/completions|messages)\/?$/.test(url.pathname)) {
     return {
       ok: false,
-      message: '这里填写服务基址（不要带具体接口路径）；路径由适配器自己追加。',
+      message: '这里要求填写不含具体接口路径的服务地址。',
     }
   }
   if (url.search !== '' || url.hash !== '') {

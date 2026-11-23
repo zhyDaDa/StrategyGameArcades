@@ -101,6 +101,22 @@ export class CredentialStore {
     this.emit()
   }
 
+  /** 其它标签页修改了持久化凭据时，同步 remembered 项；内存-only 项保持不变。 */
+  syncRemembered(): void {
+    let changed = false
+    for (const [id, entry] of this.entries) {
+      if (entry.remembered) {
+        this.entries.delete(id)
+        changed = true
+      }
+    }
+    const before = this.entries.size
+    this.load()
+    if (changed || this.entries.size !== before) {
+      this.emit()
+    }
+  }
+
   /** 仅用于测试与诊断：返回元信息，不返回 secret。 */
   list(): readonly Omit<CredentialEntry, 'secret'>[] {
     return [...this.entries.values()].map(({ id, remembered }) => ({ id, remembered }))
@@ -183,6 +199,14 @@ function createLocalStorageAdapter(): CredentialStorage | null {
 }
 
 export const credentialStore = new CredentialStore(createLocalStorageAdapter())
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === STORAGE_KEY) {
+      credentialStore.syncRemembered()
+    }
+  })
+}
 
 export function createCredentialId(): string {
   const cryptoApi = globalThis.crypto

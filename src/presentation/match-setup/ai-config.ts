@@ -37,8 +37,8 @@ export interface JavaScriptStrategyConfig {
 export interface CloudLlmConfig {
   readonly kind: 'cloud-llm'
   readonly provider: LlmProviderKind
-  /** 接口基址；OpenAI 兼容端点会追加 /chat/completions。 */
-  readonly baseUrl: string
+  /** 完整的请求地址（例如 …/v1/chat/completions）；不会再追加任何路径。 */
+  readonly endpoint: string
   readonly model: string
   readonly timeoutMs: number
   /** credential-store 中的密钥 id；null 表示无凭据（例如自建无鉴权端点）。 */
@@ -47,7 +47,8 @@ export interface CloudLlmConfig {
 
 export interface LocalLlmConfig {
   readonly kind: 'local-llm'
-  readonly baseUrl: string
+  /** 完整的请求地址；不会再追加任何路径。 */
+  readonly endpoint: string
   readonly model: string
   readonly timeoutMs: number
   readonly credentialId: string | null
@@ -84,21 +85,6 @@ function decide(observation, legalActions, context) {
 
 export const DEFAULT_AI_CONFIG_BY_TYPE: Partial<Record<SeatType, AiSeatConfig>> = {
   algorithm: { kind: 'builtin' },
-  llm: {
-    kind: 'cloud-llm',
-    provider: 'openai-compatible',
-    baseUrl: '',
-    model: '',
-    timeoutMs: DEFAULT_AI_TIMEOUT_MS,
-    credentialId: null,
-  },
-  local: {
-    kind: 'local-llm',
-    baseUrl: '',
-    model: '',
-    timeoutMs: DEFAULT_AI_TIMEOUT_MS,
-    credentialId: null,
-  },
 }
 
 /** 本地回环地址：只有这些主机允许使用 http；其余端点必须 https。 */
@@ -138,7 +124,7 @@ const javascriptSchema = z.object({
 const cloudLlmSchema = z.object({
   kind: z.literal('cloud-llm'),
   provider: z.enum(LLM_PROVIDER_KINDS),
-  baseUrl: endpointSchema({ allowPath: false, label: '接口地址' }),
+  endpoint: endpointSchema({ allowPath: true, label: '完整请求地址' }),
   model: z.string().trim().min(1, '模型名称不能为空').max(160),
   timeoutMs: timeoutSchema,
   credentialId: credentialIdSchema,
@@ -146,7 +132,7 @@ const cloudLlmSchema = z.object({
 
 const localLlmSchema = z.object({
   kind: z.literal('local-llm'),
-  baseUrl: endpointSchema({ allowPath: false, label: '本地服务地址' }),
+  endpoint: endpointSchema({ allowPath: true, label: '本地服务完整请求地址' }),
   model: z.string().trim().min(1, '模型名称不能为空').max(160),
   timeoutMs: timeoutSchema,
   credentialId: credentialIdSchema,

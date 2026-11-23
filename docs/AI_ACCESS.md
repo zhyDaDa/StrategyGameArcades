@@ -51,6 +51,8 @@ decide({ playerId, observation, legalActions, turn, signal }) -> Promise<Action>
 - 可选「记住 Key」：显式勾选后写入 localStorage（`table.ai.credentials.v1`）。
 - 「记住」是**明文保存**，没有任何加密收益；同源脚本（包括被 XSS 注入的第三方脚本）都能读取。
 - 设置页提供「清空全部 AI 凭据」；席位配置里提供显示/隐藏（当前输入）、更换、删除。
+- 设置页保存模型配置时，若填写了 Key，会自动标记为「记住」——否则刷新后该配置不可用。
+  这一点会在配置表单中如实提示。
 - 已保存的 Key 不会回填到输入框，避免把明文再次渲染进 DOM。
 - Key 不会写入错误信息、日志、URL 或遥测；错误详情只保留服务端返回体的前 200 字符。
 
@@ -96,30 +98,52 @@ decide({ playerId, observation, legalActions, turn, signal }) -> Promise<Action>
 | 请求根本没有出现在服务日志 | 预检被拒、浏览器阻止私有网络访问、服务未监听 |
 | 日志有 OPTIONS 但无 POST | CORS 未允许 `POST` 或 `Authorization` 头 |
 | 401 / 403 | 令牌错误、Origin 白名单不含本站 |
-| 404 | 路径不是 `/decide`，或 Base URL 前缀不对 |
+| 404 | 完整请求地址写错，或服务没有实现该路径 |
 | 429 | 本地服务限流 |
 
 ### CC Switch 等兼容代理
 
 本项目**不假设**任何代理软件的具体版本、UI 选项或接口形状。它只做两件事：
 
-- 用用户填写的 Base URL 调用 OpenAI 兼容 `POST /chat/completions`；
+- 向用户填写的**完整请求地址**发送 OpenAI 兼容 JSON 请求；
 - 用用户填写的完整 URL 调用自定义 `/decide`。
 
 如果某个代理版本提供上述接口，并且允许本站 Origin 的 CORS，就可以尝试连接；
 是否可行以实际版本、浏览器 DevTools 与服务日志为准。没有经过验证，本项目不会声称
 它一定支持浏览器跨域或某个 CORS 开关。
 
-## 6. 云端 BYOK 的现实限制
+## 6. 模型配置与请求地址
+
+设置页的「AI 配置」保存一组可复用的模型配置：名称、完整请求地址、模型 ID 与凭据。
+游戏席位只从下拉框选择配置，不再重复填写。
+
+**请求地址必须是完整 URL，本站不会追加 `/chat/completions`、`/messages` 或任何路径。**
+例如：
+
+- OpenAI 兼容：`https://api.openai.com/v1/chat/completions`
+- Anthropic：`https://api.anthropic.com/v1/messages`
+- Ollama：`http://127.0.0.1:11434/v1/chat/completions`
+- 自定义 `/decide`：`http://127.0.0.1:8787/decide`
+
+游戏配置页的下拉框只读取设置页保存的配置；点击「新建配置 / 管理」会在**新标签页**打开设置页，
+避免丢失当前尚未保存的席位选择。保存后回到原标签，下拉框会通过 `storage` 事件自动刷新。
+
+设置页点击「新建配置 / 编辑」也会像对局配置一样**整页横向左移**，在右侧完整页面里填写；
+「保存配置」成功后滑回列表，取消则直接返回，不保存任何改动。
+
+选择配置时会把地址、模型、超时与凭据 id **复制进当前对局配置**；之后编辑 profile
+不会回溯修改已保存的对局，避免一局棋在途中悄悄换了模型。需要换模型时，在对局配置页重新选择。
+
+## 7. 云端 BYOK 的现实限制
 
 - 是否支持浏览器跨域由**服务商**决定，本站不能承诺所有服务商都能直连。
 - Anthropic Messages API 需要 `anthropic-dangerous-direct-browser-access` 头，并依赖其
   CORS 支持；被拒绝时会显示 403 或网络错误。
 - 浏览器直连会把 Key 暴露在页面脚本环境中；这是 BYOK 的固有代价。
-- 不做模型列表自动发现，用户自行填写 Base URL 与模型 ID。
+- 不做模型列表自动发现，用户自行填写完整请求地址与模型 ID。
 - 不把 `provider` 写死成少数厂商：OpenAI 兼容协议和 Anthropic 协议之外的私有接口不猜测。
 
-## 7. 小模型 / 模型文件状态
+## 8. 小模型 / 模型文件状态
 
 当前版本**没有**开放 JSON 权重与 ONNX 导入 UI。原因不是「做不了」，而是不做虚假能力：
 
@@ -133,7 +157,7 @@ decide({ playerId, observation, legalActions, turn, signal }) -> Promise<Action>
 imports、内存、执行时间与宿主权限。在这些协议落地前，代码策略（JavaScript）是唯一
 可安全导入的「用户逻辑」。
 
-## 8. 完全本地部署
+## 9. 完全本地部署
 
 ```powershell
 pnpm install
@@ -145,7 +169,7 @@ pnpm preview
 页面底部的构建信息可用于核对版本。发布到静态托管时，只上传 `dist/`，不要上传任何
 `.env` 或带 Key 的文件。
 
-## 9. 残余风险
+## 10. 残余风险
 
 - localStorage 中的 Key 可被同源 XSS 读取；站点自身与第三方脚本的供应链安全无法由本文件保证。
 - Worker + QuickJS 降低风险，但**Worker 不是完整安全沙箱**；安全性来自不向解释器暴露

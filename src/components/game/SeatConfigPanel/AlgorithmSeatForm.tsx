@@ -8,6 +8,7 @@ import {
   type JavaScriptStrategyConfig,
 } from '@/presentation/match-setup/ai-config'
 import type { SeatVerification } from '@/presentation/ai/seat-verification'
+import { downloadStrategyDoc } from '@/presentation/ai/strategy-doc'
 import {
   deleteStrategy,
   readStrategies,
@@ -100,6 +101,15 @@ export function AlgorithmSeatForm({
           </p>
 
           <ConfigField
+            label="当前游戏规则"
+            hint="策略必须基于下面这份规则；下载按钮会同时附带 observation 与合法动作样例。"
+          >
+            <p className="rounded-lg border bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
+              {context.rulesSummary}
+            </p>
+          </ConfigField>
+
+          <ConfigField
             label="程序语言"
             hint="当前只启用 JavaScript；Lua / Python 需要各自的独立沙箱运行时，未完成前不开放。"
           >
@@ -151,6 +161,7 @@ export function AlgorithmSeatForm({
             strategy={strategy}
             onImport={(next) => updateStrategy(next)}
             onReset={() => updateStrategy({ source: DEFAULT_JAVASCRIPT_SOURCE })}
+            onDownloadDoc={() => downloadStrategyDoc(context, seatId)}
           />
 
           <StrategyLibrary
@@ -283,10 +294,12 @@ function StrategyFileActions({
   strategy,
   onImport,
   onReset,
+  onDownloadDoc,
 }: {
   readonly strategy: JavaScriptStrategyConfig
   readonly onImport: (patch: Partial<JavaScriptStrategyConfig>) => void
   readonly onReset: () => void
+  readonly onDownloadDoc: () => void
 }) {
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -310,7 +323,7 @@ function StrategyFileActions({
     link.href = url
     link.download = `${strategy.name || 'strategy'}.json`
     link.click()
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => URL.revokeObjectURL(url), 0)
   }
 
   async function importStrategy(file: File) {
@@ -360,6 +373,9 @@ function StrategyFileActions({
       </Button>
       <Button variant="outline" size="sm" onClick={onReset}>
         恢复模板
+      </Button>
+      <Button variant="outline" size="sm" onClick={onDownloadDoc}>
+        下载说明文档 (.md)
       </Button>
       <span className="text-xs text-muted-foreground">
         策略随本局配置保存在浏览器本地；换游戏时请重新导入。

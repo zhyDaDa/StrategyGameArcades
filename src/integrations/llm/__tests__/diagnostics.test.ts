@@ -3,7 +3,7 @@ import { testLlmConnection } from '../diagnostics'
 
 const config = {
   provider: 'openai-compatible' as const,
-  baseUrl: 'https://api.example.com/v1',
+  endpoint: 'https://api.example.com/v1/chat/completions',
   apiKey: 'sk-secret-value',
   model: 'test-model',
   timeoutMs: 30_000,

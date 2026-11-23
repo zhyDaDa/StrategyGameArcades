@@ -43,7 +43,7 @@ export function llmHttpError(status: number, body: string): LlmRequestError {
     return new LlmRequestError('forbidden', '访问被拒绝（403）：Key 权限不足，或服务商禁止浏览器直连。', { status, detail })
   }
   if (status === 404) {
-    return new LlmRequestError('not-found', '端点或模型不存在（404）：检查 Base URL 与模型名称。', { status, detail })
+    return new LlmRequestError('not-found', '端点或模型不存在（404）：检查完整请求地址与模型名称。', { status, detail })
   }
   if (status === 429) {
     return new LlmRequestError('rate-limited', '额度或频率受限（429）：稍后重试或检查账户额度。', { status, detail })
@@ -84,7 +84,7 @@ export const LLM_DIAGNOSTIC_COPY: Record<LlmErrorCode, DiagnosticCopy> = {
   },
   'invalid-url': {
     title: '地址格式不正确',
-    hint: '使用 https:// 开头的完整基址；本机服务可用 http://127.0.0.1 或 http://localhost。',
+    hint: '填写完整的 https 请求地址；本机服务可用 http://127.0.0.1 或 http://localhost。',
   },
   'cors-or-unreachable': {
     title: '无法连接',
@@ -104,7 +104,7 @@ export const LLM_DIAGNOSTIC_COPY: Record<LlmErrorCode, DiagnosticCopy> = {
   },
   'not-found': {
     title: '端点或模型不存在（404）',
-    hint: '检查 Base URL 是否包含正确的版本前缀，以及模型 ID 是否拼写正确。',
+    hint: '检查完整请求地址是否写对（含版本前缀与接口路径），以及模型 ID 是否拼写正确。',
   },
   'rate-limited': {
     title: '额度或频率受限（429）',

@@ -340,7 +340,7 @@ export const gomokuGameModel = new GameModel({
 
 ### Phase 3：AI 与内容
 
-- LLM 设置界面：provider/Base URL/model/API Key 配置，**只存用户本地**（localStorage 一类），绝不进仓库或构建产物。
+- LLM 设置界面：provider/完整请求地址/model/API Key 配置，**只存用户本地**（localStorage 一类），绝不进仓库或构建产物。
 - LLM 失败 UI：超时、非法输出、限流都要有明确提示，不做静默重试。
 - 存档 / 恢复 UI：`save-envelope` + `codec` 已有，缺 Session 层「从存档恢复 + 历史」的入口。
 - `docs/` 六篇：ARCHITECTURE、GAME_PROTOCOL、NAMING、MOTION、DESIGN_SYSTEM、GAME_TEMPLATE。

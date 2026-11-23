@@ -17,30 +17,30 @@ const completionSchema = z.object({
 })
 
 export interface OpenAICompatOptions {
-  readonly baseUrl: string
+  readonly endpoint: string
   readonly apiKey: string
   readonly model: string
   readonly timeoutMs: number
 }
 
-/** OpenAI 兼容 Chat Completions 端点（OpenAI / OpenRouter / 本地 Ollama 等）。 */
+/** OpenAI 兼容 Chat Completions 端点；endpoint 必须是完整请求地址。 */
 export class OpenAICompatClient implements LlmClient {
   readonly id = 'openai-compatible'
   readonly model: string
 
-  private readonly baseUrl: string
+  private readonly endpoint: string
   private readonly apiKey: string
   private readonly timeoutMs: number
 
   constructor(options: OpenAICompatOptions) {
-    this.baseUrl = options.baseUrl.replace(/\/+$/, '')
+    this.endpoint = options.endpoint
     this.apiKey = options.apiKey.trim()
     this.model = options.model
     this.timeoutMs = options.timeoutMs
   }
 
   async complete(messages: readonly LlmChatMessage[], signal: AbortSignal): Promise<string> {
-    if (this.baseUrl === '') {
+    if (this.endpoint === '') {
       throw new LlmRequestError('invalid-config', '接口地址为空。')
     }
     if (this.model.trim() === '') {
@@ -54,7 +54,7 @@ export class OpenAICompatClient implements LlmClient {
         headers.Authorization = `Bearer ${this.apiKey}`
       }
 
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      const response = await fetch(`${this.endpoint}`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ model: this.model, messages }),

@@ -19,7 +19,7 @@ const strategy: JavaScriptStrategyConfig = {
 const cloud: CloudLlmConfig = {
   kind: 'cloud-llm',
   provider: 'openai-compatible',
-  baseUrl: 'https://api.example.com/v1',
+  endpoint: 'https://api.example.com/v1/chat/completions',
   model: 'test-model',
   timeoutMs: 30000,
   credentialId: null,

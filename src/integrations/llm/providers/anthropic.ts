@@ -13,30 +13,30 @@ const messageSchema = z.object({
 })
 
 export interface AnthropicOptions {
-  readonly baseUrl: string
+  readonly endpoint: string
   readonly apiKey: string
   readonly model: string
   readonly timeoutMs: number
 }
 
-/** Anthropic Messages API（纯静态部署 + 用户自带 Key 需显式声明浏览器直连）。 */
+/** Anthropic Messages API；endpoint 必须是完整请求地址（…/v1/messages）。 */
 export class AnthropicClient implements LlmClient {
   readonly id = 'anthropic'
   readonly model: string
 
-  private readonly baseUrl: string
+  private readonly endpoint: string
   private readonly apiKey: string
   private readonly timeoutMs: number
 
   constructor(options: AnthropicOptions) {
-    this.baseUrl = options.baseUrl.replace(/\/+$/, '')
+    this.endpoint = options.endpoint
     this.apiKey = options.apiKey.trim()
     this.model = options.model
     this.timeoutMs = options.timeoutMs
   }
 
   async complete(messages: readonly LlmChatMessage[], signal: AbortSignal): Promise<string> {
-    if (this.baseUrl === '') {
+    if (this.endpoint === '') {
       throw new LlmRequestError('invalid-config', '接口地址为空。')
     }
     if (this.apiKey === '') {
@@ -56,7 +56,7 @@ export class AnthropicClient implements LlmClient {
 
     const timed = withTimeout(signal, this.timeoutMs)
     try {
-      const response = await fetch(`${this.baseUrl}/messages`, {
+      const response = await fetch(`${this.endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

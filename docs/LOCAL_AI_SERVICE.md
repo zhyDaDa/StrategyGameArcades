@@ -149,7 +149,8 @@ def decide(
 
 这两者已经提供 OpenAI 兼容接口，通常**不需要** `/decide` 代理：
 
-- Base URL 填 `http://127.0.0.1:11434/v1`（Ollama）或 `http://127.0.0.1:1234/v1`（LM Studio）；
+- 完整请求地址填 `http://127.0.0.1:11434/v1/chat/completions`（Ollama）
+  或 `http://127.0.0.1:1234/v1/chat/completions`（LM Studio）；
 - 模型 ID 填本机已加载的模型；
 - 在本地服务中放行本站 Origin 的 CORS。
 

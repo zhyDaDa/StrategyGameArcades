@@ -151,7 +151,7 @@ function createCloudLlmController<O, A>(
     id,
     client: createLlmClient({
       provider: config.provider,
-      baseUrl: config.baseUrl,
+      endpoint: config.endpoint,
       apiKey,
       model: config.model,
       timeoutMs: config.timeoutMs,
@@ -174,7 +174,7 @@ function createLocalLlmController<O, A>(
     id,
     client: createLlmClient({
       provider: 'openai-compatible',
-      baseUrl: config.baseUrl,
+      endpoint: config.endpoint,
       apiKey: token,
       model: config.model,
       timeoutMs: config.timeoutMs,

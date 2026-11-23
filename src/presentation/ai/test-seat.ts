@@ -156,7 +156,7 @@ async function testLlm(
 
   const client = createLlmClient({
     provider: isCloud ? ('provider' in config ? config.provider : 'openai-compatible') : 'openai-compatible',
-    baseUrl: config.baseUrl,
+    endpoint: config.endpoint,
     apiKey: apiKey ?? '',
     model: config.model,
     timeoutMs: config.timeoutMs,
